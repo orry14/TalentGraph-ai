@@ -8,7 +8,9 @@ import {
   GitMerge,
   LogOut,
   Sparkles,
-  Database
+  Database,
+  FolderGit,
+  UserSearch
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -33,6 +35,8 @@ export const Layout: React.FC<LayoutProps> = ({
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
     { id: 'employees', name: 'Employee Workspace', icon: Users },
+    { id: 'recruitment', name: 'Recruitment', icon: UserSearch },
+    { id: 'projects', name: 'Projects', icon: FolderGit },
     { id: 'staffing', name: 'Project Staffing Engine', icon: Briefcase },
     { id: 'gap-analysis', name: 'Skill Gap Analysis', icon: TrendingUp },
     { id: 'skill-graph', name: 'AI Skill Graph', icon: GitMerge },

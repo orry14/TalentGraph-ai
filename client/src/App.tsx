@@ -7,6 +7,8 @@ import { Employees } from './pages/Employees';
 import { Staffing } from './pages/Staffing';
 import { GapAnalysis } from './pages/GapAnalysis';
 import { SkillGraph } from './pages/SkillGraph';
+import { Projects } from './pages/Projects';
+import { Recruitment } from './pages/Recruitment';
 import { Login } from './pages/Login';
 import { api, Employee, Project, DashboardStats, SkillGapReport } from './utils/api';
 import { SkeletonTable } from './components/LoadingSkeleton';
@@ -92,7 +94,7 @@ function AppContent() {
 
     switch (activeTab) {
       case 'dashboard':
-        return stats ? <Dashboard stats={stats} /> : null;
+        return stats ? <Dashboard stats={stats} setActiveTab={setActiveTab} /> : null;
       case 'employees':
         return (
           <Employees
@@ -103,6 +105,10 @@ function AppContent() {
         );
       case 'staffing':
         return <Staffing />;
+      case 'projects':
+        return <Projects />;
+      case 'recruitment':
+        return <Recruitment />;
       case 'gap-analysis':
         return gapReport ? <GapAnalysis report={gapReport} /> : null;
       case 'skill-graph':
@@ -123,7 +129,7 @@ function AppContent() {
       {renderContent()}
       
       {/* Global Floating AI Copilot */}
-      <ChatBot />
+      <ChatBot setActiveTab={setActiveTab} />
     </Layout>
   );
 }

@@ -143,6 +143,15 @@ class AnalyticsEngine {
       };
     }).sort((a, b) => b.rating - a.rating).slice(0, 4);
 
+    // 8. Predictive Analytics (Bonus)
+    const predictiveAnalytics = {
+      skillDecayRisk: parseFloat((10 + Math.random() * 10).toFixed(1)), // Mock 10-20%
+      benchUtilizationForecast: parseFloat((75 + Math.random() * 20).toFixed(1)), // Mock 75-95%
+      attritionRisk: parseFloat((3 + Math.random() * 5).toFixed(1)), // Mock 3-8%
+      projectSuccessProbability: parseFloat((85 + Math.random() * 10).toFixed(1)), // Mock 85-95%
+      hiringPipelineHealth: Math.random() > 0.5 ? 'Healthy' : 'Needs Attention'
+    };
+
     return {
       capabilityScore,
       totalEmployees: employees.length,
@@ -151,7 +160,8 @@ class AnalyticsEngine {
       skillDistribution,
       departmentExpertise,
       techAdoption,
-      topExperts
+      topExperts,
+      predictiveAnalytics
     };
   }
 

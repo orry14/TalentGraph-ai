@@ -175,6 +175,40 @@ User Question: "${message}"`;
     return this.simulateChatBot(message, context);
   }
 
+  /**
+   * 5. Generate Semantic Embedding (1536 dimensions)
+   */
+  public async generateEmbedding(text: string): Promise<number[]> {
+    // If real OpenAI/Voyage API is used, call it here.
+    // For demo purposes, we create a deterministic mock vector based on keywords.
+    const vec = new Array(1536).fill(0);
+    const textLower = text.toLowerCase();
+    
+    // Map skills to specific indices to simulate semantic clustering
+    const skillIndices: Record<string, number> = {
+      'react': 0, 'typescript': 1, 'aws': 2, 'docker': 3, 'kubernetes': 4,
+      'python': 5, 'node': 6, 'figma': 7, 'llm': 8, 'machine learning': 9,
+      'frontend': 10, 'backend': 11, 'devops': 12, 'designer': 13, 'sql': 14,
+      'graphql': 15, 'redis': 16, 'terraform': 17, 'next.js': 18, 'pytorch': 19,
+      'engineer': 20, 'developer': 21, 'manager': 22, 'cloud': 23, 'data': 24
+    };
+
+    Object.entries(skillIndices).forEach(([skill, idx]) => {
+      if (textLower.includes(skill)) {
+        vec[idx] = 1.0;
+      }
+    });
+
+    // Add slight noise to the rest for realism
+    for(let i = 25; i < 1536; i++) {
+      vec[i] = (Math.random() * 0.05); 
+    }
+
+    // Normalize
+    const magnitude = Math.sqrt(vec.reduce((sum, val) => sum + val * val, 0));
+    return vec.map(v => magnitude === 0 ? 0 : v / magnitude);
+  }
+
   // ==========================================
   // --- Simulators for Out-of-box Run ---
   // ==========================================
@@ -449,105 +483,356 @@ User Question: "${message}"`;
     context: { employees: Employee[]; projects: Project[] }
   ): string {
     const msg = message.toLowerCase();
+    const emps = context.employees;
+    const projs = context.projects;
 
-    // 1. "Who is the best React developer?"
-    if (msg.includes('react') && (msg.includes('best') || msg.includes('who') || msg.includes('developer'))) {
-      const devs = context.employees
-        .filter(e => e.technicalSkills.some(s => s.name.toLowerCase() === 'react'))
+    // 1. "Who reports to [Name]?"
+    if (msg.includes('report') || msg.includes('manager') || msg.includes('subordinate')) {
+      // Find the manager
+      const manager = emps.find(e => msg.includes(e.name.toLowerCase()) || msg.includes(e.name.split(' ')[0].toLowerCase())) || emps[0]; // fallback to Alex Rivera
+      const reports = emps.filter(e => e.managerId === manager.id);
+      
+      let reply = `### Reporting Hierarchy for **${manager.name}** (${manager.role})\n\n`;
+      if (reports.length === 0) {
+        reply += `Currently, no direct reports are registered for **${manager.name}** in the Org Digital Twin.\n`;
+      } else {
+        reply += `Here are the direct reports identified in the org chart:\n\n`;
+        reply += `| Employee Name | Role | Department | Performance Rating |\n`;
+        reply += `| :--- | :--- | :--- | :--- |\n`;
+        reports.forEach(r => {
+          reply += `| **${r.name}** | ${r.role} | ${r.department} | ${r.performanceRating} / 5.0 |\n`;
+        });
+        reply += `\n[ACTION: navigate | target: skill-graph | label: View Hierarchy in Digital Twin]`;
+      }
+      return reply;
+    }
+
+    // 2. "Who knows [Skill]?" / "Who has [Skill] experience?"
+    if (msg.includes('knows') || msg.includes('has experience') || msg.includes('skills')) {
+      const skillsToSearch = ['react', 'typescript', 'aws', 'docker', 'kubernetes', 'terraform', 'python', 'pytorch', 'tensorflow', 'llms', 'sql', 'figma', 'graphql', 'redis'];
+      const matchedSkill = skillsToSearch.find(s => msg.includes(s)) || 'react';
+      
+      const experts = emps
+        .filter(e => e.technicalSkills.some(s => s.name.toLowerCase() === matchedSkill))
         .map(e => ({
           name: e.name,
-          prof: e.technicalSkills.find(s => s.name.toLowerCase() === 'react')?.proficiency || 0,
           role: e.role,
-          rating: e.performanceRating
+          prof: e.technicalSkills.find(s => s.name.toLowerCase() === matchedSkill)?.proficiency || 0
         }))
-        .sort((a, b) => b.prof - a.prof || b.rating - a.rating);
+        .sort((a, b) => b.prof - a.prof);
 
-      let reply = `### Top React Developers in the Organization\n\n`;
-      reply += `Based on skill proficiency database records and performance logs, here are the top React developers:\n\n`;
-      devs.forEach((d, i) => {
-        reply += `${i + 1}. **${d.name}** - ${d.role}\n`;
-        reply += `   * *React Proficiency:* ${'★'.repeat(d.prof)}${'☆'.repeat(5 - d.prof)} (${d.prof}/5)\n`;
-        reply += `   * *Performance Rating:* ${d.rating}/5.0\n`;
-      });
-      reply += `\n**Recommendation:** For high-complexity UI architecture or design systems, **${devs[0]?.name}** is the most qualified candidate.`;
+      let reply = `### Skill Query: Expertise in **${matchedSkill.toUpperCase()}**\n\n`;
+      if (experts.length === 0) {
+        reply += `No employees are registered with direct **${matchedSkill}** skills in their expertise mapping.\n`;
+      } else {
+        reply += `Here are the matching resources sorted by proficiency rating:\n\n`;
+        reply += `| Employee | Current Role | Proficiency Level |\n`;
+        reply += `| :--- | :--- | :--- |\n`;
+        experts.forEach(e => {
+          reply += `| **${e.name}** | ${e.role} | ${'★'.repeat(e.prof)}${'☆'.repeat(5 - e.prof)} (${e.prof}/5) |\n`;
+        });
+        reply += `\n[ACTION: navigate | target: skill-graph | label: Open Knowledge Graph]`;
+      }
       return reply;
     }
 
-    // 2. "Who can lead an AI project?"
-    if (msg.includes('ai project') || msg.includes('lead ai') || (msg.includes('ai') && msg.includes('lead')) || msg.includes('machine learning')) {
-      const candidates = context.employees
-        .filter(e => e.technicalSkills.some(s => ['llms', 'python', 'pytorch', 'tensorflow'].includes(s.name.toLowerCase())))
+    // 3. "Who has worked with Banking + AWS?"
+    if (msg.includes('banking') && msg.includes('aws')) {
+      const matches = emps.filter(e => 
+        (e.pastExperience?.some(p => p.toLowerCase().includes('banking')) || e.clients?.some(c => c.toLowerCase().includes('bank'))) &&
+        e.technicalSkills.some(s => s.name.toLowerCase() === 'aws')
+      );
+
+      let reply = `### Experienced Talents: **Banking + AWS**\n\n`;
+      reply += `Cross-matching client histories with technical capabilities found the following candidates:\n\n`;
+      if (matches.length === 0) {
+        reply += `No employees matched both Banking experience and AWS cloud certifications.\n`;
+      } else {
+        reply += `| Name | Role | Clients | AWS Certifications |\n`;
+        reply += `| :--- | :--- | :--- | :--- |\n`;
+        matches.forEach(m => {
+          const cert = m.certifications.find(c => c.includes('AWS')) || 'AWS Certified';
+          reply += `| **${m.name}** | ${m.role} | ${m.clients?.join(', ') || 'N/A'} | ${cert} |\n`;
+        });
+      }
+      return reply;
+    }
+
+    // 4. "Who worked with Sarah Chen?"
+    if (msg.includes('worked with sarah') || msg.includes('sarah chen')) {
+      // Find Sarah Chen's active projects
+      const sarah = emps.find(e => e.id === 'emp-02');
+      const sarahProjs = sarah ? sarah.currentProjects : [];
+      const coworkers = emps.filter(e => e.id !== 'emp-02' && e.currentProjects.some(p => sarahProjs.includes(p)));
+
+      let reply = `### Network Connections: Collaborators with **Sarah Chen**\n\n`;
+      reply += `Based on current assigned project workloads, Sarah Chen is collaborating on **${sarahProjs.join(', ')}** with:\n\n`;
+      if (coworkers.length === 0) {
+        reply += `No coworkers are currently sharing projects with Sarah.\n`;
+      } else {
+        reply += `| Collaborator | Role | Shared Project |\n`;
+        reply += `| :--- | :--- | :--- |\n`;
+        coworkers.forEach(c => {
+          const shared = c.currentProjects.filter(p => sarahProjs.includes(p)).join(', ');
+          reply += `| **${c.name}** | ${c.role} | ${shared} |\n`;
+        });
+      }
+      return reply;
+    }
+
+    // 5. "Who can mentor React developers?"
+    if (msg.includes('mentor') && msg.includes('react')) {
+      const mentors = emps.filter(e => 
+        e.technicalSkills.some(s => s.name.toLowerCase() === 'react' && s.proficiency >= 4) &&
+        e.softSkills.includes('Mentorship')
+      );
+
+      let reply = `### Mentorship Recommendation: **React Mentors**\n\n`;
+      reply += `Seniors with advanced React skills (proficiency >= 4/5) and registered mentorship capabilities:\n\n`;
+      if (mentors.length === 0) {
+        reply += `No high-proficiency React developers are currently designated as Mentors.\n`;
+      } else {
+        reply += `| Mentor Name | Current Role | Experience Years | React Level |\n`;
+        reply += `| :--- | :--- | :--- | :--- |\n`;
+        mentors.forEach(m => {
+          const reactLvl = m.technicalSkills.find(s => s.name === 'React')?.proficiency || 4;
+          reply += `| **${m.name}** | ${m.role} | ${m.experienceYears} Years | Level ${reactLvl}/5 |\n`;
+        });
+      }
+      return reply;
+    }
+
+    // 6. "Who should replace [Name]?"
+    if (msg.includes('replace')) {
+      const targetName = msg.includes('alex') ? 'Alex Rivera' : 'Sarah Chen';
+      const targetEmp = emps.find(e => e.name.toLowerCase().includes(targetName.split(' ')[0].toLowerCase())) || emps[0];
+      
+      // Look for candidates with similar skills
+      const targetSkills = targetEmp.technicalSkills.map(s => s.name.toLowerCase());
+      const alternates = emps
+        .filter(e => e.id !== targetEmp.id)
         .map(e => {
-          const aiSkills = e.technicalSkills.filter(s => ['llms', 'pytorch', 'tensorflow', 'python'].includes(s.name.toLowerCase()));
-          const avgProf = aiSkills.reduce((sum, s) => sum + s.proficiency, 0) / aiSkills.length;
+          let score = 0;
+          e.technicalSkills.forEach(s => {
+            if (targetSkills.includes(s.name.toLowerCase())) {
+              score += s.proficiency;
+            }
+          });
           return {
-            name: e.name,
-            role: e.role,
-            skills: aiSkills.map(s => `${s.name} (${s.proficiency}/5)`).join(', '),
-            avgProf,
-            rating: e.performanceRating,
-            exp: e.experienceYears
+            employee: e,
+            matchScore: Math.round((score / Math.max(1, targetSkills.length * 5)) * 100)
           };
         })
-        .sort((a, b) => b.avgProf - a.avgProf || b.rating - a.rating);
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 3);
 
-      let reply = `### AI Project Leadership Evaluation\n\n`;
-      reply += `To lead an AI or Machine Learning initiative, an engineer requires deep competence in AI frameworks (LLMs, PyTorch, Python) combined with solid leadership traits.\n\n`;
-      candidates.forEach((c, i) => {
-        reply += `${i + 1}. **${c.name}** - ${c.role}\n`;
-        reply += `   * *Core AI Skills:* ${c.skills}\n`;
-        reply += `   * *Experience:* ${c.exp} years | *Performance:* ${c.rating}/5.0\n`;
+      let reply = `### AI Succession Planning: Replacements for **${targetEmp.name}**\n\n`;
+      reply += `Here are the top internal succession candidates ranked by skill coverage overlap:\n\n`;
+      alternates.forEach((alt, idx) => {
+        reply += `${idx + 1}. **${alt.employee.name}** - ${alt.employee.role} (${alt.matchScore}% skill match)\n`;
+        reply += `   * *Performance:* ${alt.employee.performanceRating}/5.0 | *Current Projects:* ${alt.employee.currentProjects.length} active\n`;
       });
-      reply += `\n**Strategic Recommendation:** **Sarah Chen** is uniquely qualified. She is our Senior ML Researcher with 7 years experience, a 4.9 performance rating, and is a specialist in LLMs and NLP. Alternatively, **Alex Rivera** (Staff Engineer) has strong API design skills and cloud architecture experience, making him the perfect candidate to lead the production deployment and integration of AI APIs.`;
+      reply += `\n**Succession Action:** We recommend running a Career Resignation Simulation for **${targetEmp.name}** to observe cascading project dependencies.\n\n`;
+      reply += `[ACTION: simulate | employeeId: ${targetEmp.id} | type: departure | label: Run Career Simulation for ${targetEmp.name}]`;
       return reply;
     }
 
-    // 3. "Which team lacks cloud skills?" or "lack cloud skills"
-    if (msg.includes('lack') || msg.includes('cloud') || msg.includes('weakness') || msg.includes('gap')) {
-      let reply = `### Cloud Skills & Team Gaps Analysis\n\n`;
-      reply += `Looking at our current engineering matrix:\n`;
-      reply += `- **Cloud Experts:** **Alex Rivera** (Staff Engineer, AWS Certified Solutions Architect Professional) and **Aisha Rahman** (DevOps Engineer, CKA & AWS Professional).\n`;
-      reply += `- **Low Cloud Exposure:** The frontend division (**Elena Rostova**) and junior backend devs show minimal cloud configuration profiles.\n\n`;
-      reply += `**Department-wise Gaps:**\n`;
-      reply += `1. **Design & Product Teams:** Possess zero cloud or infrastructure capabilities (as expected).\n`;
-      reply += `2. **Frontend Developers:** Rely heavily on Vercel deployments; lack direct AWS infrastructure and Docker/Kubernetes management skills.\n`;
-      reply += `3. **Data Science Team:** Strong in ML scripting (Python/PyTorch) but has low container orchestration and infrastructure provisioning experience, presenting a bottle-neck for deploying AI models autonomously.\n\n`;
-      reply += `**Hiring Recommendation:** We need to hire 1 more Mid-Level Cloud/DevOps Engineer to support ML Model deployments or enroll the Data Science team in an AWS/Kubernetes training roadmap.`;
+    // 7. "Can we take another banking project?"
+    if (msg.includes('another banking project') || msg.includes('banking project')) {
+      const bankingExperts = emps.filter(e => e.pastExperience?.includes('Banking') || e.clients?.includes('Banking Group'));
+      const freeSeniors = emps.filter(e => e.currentProjects.length === 0 && e.experienceYears >= 6);
+
+      let reply = `### Feasibility Analysis: **New Banking Project**\n\n`;
+      reply += `**Feasibility Status: Yes, with Moderate Risk (Success Probability: 78%)**\n\n`;
+      reply += `**Insights & Capitalization:**\n`;
+      reply += `- **Domain Experts Available:** We have ${bankingExperts.length} domain experts (including Alex Rivera and David Kim).\n`;
+      reply += `- **Unassigned Bandwidth:** We have ${freeSeniors.length} experienced developers currently on the bench.\n\n`;
+      reply += `**Key Risk Factors:**\n`;
+      reply += `1. **Resource Conflict:** Our top banking experts are already staffed on *NextGen Core API*.\n`;
+      reply += `2. **Recruitment Requisition:** Initiating a new contract would require locking down an additional DevOps lead.\n\n`;
+      reply += `[ACTION: navigate | target: staffing | label: Assemble New Staffing Layout]`;
       return reply;
     }
 
-    // 4. "Who should be promoted?"
-    if (msg.includes('promote') || msg.includes('promotion') || msg.includes('readiness')) {
-      const readinessList = context.employees.map(e => {
-        const rating = e.performanceRating;
-        const exp = e.experienceYears;
-        let score = 50 + (rating - 3.0) * 20 + Math.min(exp * 3, 25);
-        score = Math.min(Math.round(score), 100);
-        return { name: e.name, role: e.role, score, rating, exp };
-      }).sort((a, b) => b.score - a.score);
+    // 8. "Who is overloaded?"
+    if (msg.includes('overloaded') || msg.includes('overload') || msg.includes('busy')) {
+      const overloaded = emps.filter(e => e.currentProjects.length >= 2);
 
-      let reply = `### Promotion Readiness Ranking\n\n`;
-      reply += `Here are the candidates ranked by AI promotion readiness metrics (aggregating experience, performance, and leadership indicators):\n\n`;
-      readinessList.forEach((c, i) => {
-        const flag = c.score >= 85 ? '🟢 High Readiness' : c.score >= 70 ? '🟡 Moderate Readiness' : '🔴 Low Readiness';
-        reply += `${i + 1}. **${c.name}** (${c.role})\n`;
-        reply += `   * *Score:* **${c.score}/100** (${flag})\n`;
-        reply += `   * *Performance:* ${c.rating}/5.0 | *Experience:* ${c.exp} years\n`;
+      let reply = `### Resource Warning: Over-allocated Talents\n\n`;
+      reply += `Employees currently assigned to **2 or more projects simultaneously**:\n\n`;
+      if (overloaded.length === 0) {
+        reply += `All employees are operating within normal capacity allocations (< 2 projects).\n`;
+      } else {
+        reply += `| Employee | Department | Role | Active Projects | Attrition Risk |\n`;
+        reply += `| :--- | :--- | :--- | :--- | :--- |\n`;
+        overloaded.forEach(o => {
+          const risk = o.experienceYears > 8 ? 'High' : 'Medium';
+          reply += `| **${o.name}** | ${o.department} | ${o.role} | ${o.currentProjects.join(', ')} | **${risk}** |\n`;
+        });
+        reply += `\nWe recommend using the **Cross Project Conflict Resolver** to balance workloads.\n\n`;
+        reply += `[ACTION: navigate | target: staffing | label: Open Conflict Resolver]`;
+      }
+      return reply;
+    }
+
+    // 9. "Which department has AI gaps?"
+    if (msg.includes('ai gaps') || msg.includes('ai gap') || msg.includes('skills gap')) {
+      let reply = `### Capability Gap Analysis: **AI & Deep Learning**\n\n`;
+      reply += `We mapped the density of advanced AI skills (LLMs, PyTorch, ML) across departments:\n\n`;
+      reply += `| Department | AI Headcount | Average Proficiency | Gap Severity |\n`;
+      reply += `| :--- | :--- | :--- | :--- |\n`;
+      reply += `| **Data Science** | 2 | 4.5 / 5.0 | Healthy |\n`;
+      reply += `| **Engineering** | 1 | 3.0 / 5.0 | Moderate |\n`;
+      reply += `| **Design** | 0 | 0.0 / 5.0 | Critical |\n`;
+      reply += `| **Product** | 0 | 0.0 / 5.0 | Critical |\n`;
+      reply += `\n**Key Gaps**: While Data Science is healthy, Engineering lacks native deployment capacity for ML systems. Marcus Vance (Design) needs training in basic Prompt/UX layout heuristics.\n\n`;
+      reply += `[ACTION: navigate | target: gap-analysis | label: View Full Skill Gap Report]`;
+      return reply;
+    }
+
+    // 10. "Which engineers are promotion ready?"
+    if (msg.includes('promotion') || msg.includes('promotion ready')) {
+      const ready = emps
+        .map(e => {
+          const rating = e.performanceRating;
+          const exp = e.experienceYears;
+          const score = Math.round(50 + (rating - 3.0) * 20 + Math.min(exp * 3, 25));
+          return { e, score };
+        })
+        .filter(r => r.score >= 80)
+        .sort((a, b) => b.score - a.score);
+
+      let reply = `### Career Pathing: Promotion Readiness Assessment\n\n`;
+      reply += `Top employees ranking high on leadership readiness, tenure, and performance benchmarks:\n\n`;
+      reply += `| Candidate | Role | Performance Rating | Readiness Index |\n`;
+      reply += `| :--- | :--- | :--- | :--- |\n`;
+      ready.forEach(r => {
+        reply += `| **${r.e.name}** | ${r.e.role} | ${r.e.performanceRating} / 5.0 | **${r.score}% (Ready Now)** |\n`;
       });
-      reply += `\n**Top Candidates for Immediate Promotion:**\n`;
-      reply += `- **Sarah Chen**: Ready to move into ML Principal/Lead Researcher. Consistently rated 4.9/5.0 with deep expertise.\n`;
-      reply += `- **Alex Rivera**: Ready for Principal Engineer. Has 10 years experience, a 4.8/5.0 rating, and serves as architectural lead.`;
+      reply += `\nClick on the Employee Workspace to view detailed growth areas and customize their upskilling pathway.\n\n`;
+      reply += `[ACTION: navigate | target: employees | label: Open Employee Workspace]`;
       return reply;
     }
 
-    // 5. "What skills should we hire next?" or "skills to hire"
-    if (msg.includes('hire') || msg.includes('future') || msg.includes('recruit')) {
-      return `### Strategic Hiring Recommendations\n\nBased on current project backlogs and upcoming requirements, here are the top 3 tech skills we need to hire for:\n\n1. **MLOps / Cloud Engineers (High Priority)**\n   * *Reason:* While we have Sarah Chen (Senior ML Researcher) creating models, deploying them is a bottleneck. We need engineers with combined Python, PyTorch, Kubernetes, and AWS deployment experience.\n\n2. **Senior Backend Developers (Redis / Distributed Systems)**\n   * *Reason:* Projects like the "NextGen Core API" require low latency Caching (Redis) and high-concurrency Node.js endpoints. We currently only have 1 Staff Engineer and 1 Mid Backend engineer capable of handling this.\n\n3. **Accessibility-Focused Frontend Engineers**\n   * *Reason:* To support the Customer Portal Redesign and our Design System 2.0 roll-out, we require React/TS engineers who have deep CSS/Tailwind skills paired with accessibility (WCAG) testing experience.`;
+    // 11. "Who is likely to resign?" / "attrition"
+    if (msg.includes('resign') || msg.includes('attrition') || msg.includes('flight risk')) {
+      let reply = `### Talent Retention: Flight Risk Predictions\n\n`;
+      reply += `Based on disengagement indices, performance ratings, and workload assessments:\n\n`;
+      reply += `| Employee | Department | Attrition Risk | Primary Disengagement Driver |\n`;
+      reply += `| :--- | :--- | :--- | :--- |\n`;
+      reply += `| **Alex Rivera** | Engineering | **78% (High)** | High market demand / Seniority cap |\n`;
+      reply += `| **Elena Rostova** | Engineering | **64% (Medium)** | Multi-project context switching overload |\n`;
+      reply += `| **Sofia Martinez** | Data Science | **35% (Low)** | Entry-level mentorship alignment gaps |\n`;
+      reply += `\n**AI Recommendation:** We suggest offering targeted retention bonuses or restructuring Alex Rivera's role before executing any structural changes.\n`;
+      return reply;
+    }
+
+    // 12. "Which project is most risky?"
+    if (msg.includes('risky') || msg.includes('project risk') || msg.includes('most risky')) {
+      let reply = `### Risk Management: Project Delivery Success Assessments\n\n`;
+      reply += `Project health indexes mapped against resource coverage:\n\n`;
+      reply += `1. **Customer Portal Redesign**: **Health Score: 54 (High Risk)**\n`;
+      reply += `   * *Reason:* Lacks a qualified QA Automation specialist and has a high budget consumption rate (85% used).\n`;
+      reply += `2. **AI Talent Extractor**: **Health Score: 72 (Warning)**\n`;
+      reply += `   * *Reason:* Sarah Chen is overallocated at 200% capacity, posing a severe bottlenecks risk.\n`;
+      reply += `3. **NextGen Core API**: **Health Score: 88 (Healthy)**\n`;
+      reply += `4. **Design System 2.0**: **Health Score: 95 (Excellent)**\n\n`;
+      reply += `[ACTION: navigate | target: projects | label: View Project Health Dashboard]`;
+      return reply;
+    }
+
+    // 12a. "Which project needs more engineers?"
+    if (msg.includes('need more engineers') || msg.includes('needs more engineers') || msg.includes('need engineers') || msg.includes('needs engineers')) {
+      let reply = `### Resource Deficit: Project Staffing Gaps\n\n`;
+      reply += `Projects requiring resource reinforcement:\n\n`;
+      reply += `- **Customer Portal Redesign**: Needs **1 QA Engineer** to resolve Phase 3 testing blockages.\n`;
+      reply += `- **AI Talent Extractor**: Needs **1 Backend Engineer** to offload Sarah Chen (currently 200% allocated).\n`;
+      reply += `- **NextGen Core API**: Needs **1 DevOps Engineer** backup to resolve Alex Rivera's multi-project workload.\n\n`;
+      reply += `**Recommendation:** Use the Project Staffing Engine to select these seed projects and mathematically calculate optimal backups.\n\n`;
+      reply += `[ACTION: navigate | target: staffing | label: Run Staffing Optimizer]`;
+      return reply;
+    }
+
+    // 12b. "Why is [Project] unhealthy?"
+    if (msg.includes('why is') && (msg.includes('unhealthy') || msg.includes('un-healthy') || msg.includes('risk') || msg.includes('warning'))) {
+      const isCoreApi = msg.includes('nextgen') || msg.includes('core api');
+      const isTalent = msg.includes('talent') || msg.includes('extractor');
+      
+      let reply = `### AI Health Diagnostic\n\n`;
+      if (isCoreApi) {
+        reply += `**NextGen Core API (Health Score: 88 - Healthy)**\n`;
+        reply += `- **Timeline Progress:** On track (timeline progress at 50% vs. 6 months duration).\n`;
+        reply += `- **Resource Warning:** Technical Lead Alex Rivera is allocated at 150% across two concurrent projects.\n`;
+        reply += `- **SPOF:** AWS/Redis cloud configurations are siloed with Alex Rivera.\n`;
+      } else if (isTalent) {
+        reply += `**AI Talent Extractor (Health Score: 72 - Warning)**\n`;
+        reply += `- **Timeline Progress:** Slight delay risk (ingestion module lagging).\n`;
+        reply += `- **Resource Warning:** Sarah Chen is allocated at 200% capacity representing a critical single bottleneck.\n`;
+        reply += `- **SPOF:** Custom NLP parsing knowledge resides entirely with Sarah Chen.\n`;
+      } else {
+        reply += `**Customer Portal Redesign (Health Score: 54 - High Risk)**\n`;
+        reply += `- **Missing Skills:** Lacks a Senior QA engineer to validate WebSocket subscriptions.\n`;
+        reply += `- **Budget Overrun:** Budget usage is at 85% with 2 months remaining (exceeds milestones progress by 35%).\n`;
+        reply += `- **Schedule Delay:** 2 overdue tasks detected on the main timeline.\n`;
+      }
+      reply += `\n[ACTION: navigate | target: projects | label: Open Projects Dashboard]`;
+      return reply;
+    }
+
+    // 12c. "Which project will likely miss its deadline?"
+    if (msg.includes('miss its deadline') || msg.includes('miss deadline') || msg.includes('missed deadline') || msg.includes('delay')) {
+      let reply = `### Delivery Forecast: Schedule Latency Predictions\n\n`;
+      reply += `AI Forecast model predictions for deadline completion risk:\n\n`;
+      reply += `1. **Customer Portal Redesign** - **On-Time Delivery: 45% (Critical Risk)**\n`;
+      reply += `   * *Estimated Completion:* Delayed by 15 days (Expected: 2026-08-15 vs. Target: 2026-08-01).\n`;
+      reply += `2. **AI Talent Extractor** - **On-Time Delivery: 68% (Moderate Risk)**\n`;
+      reply += `   * *Estimated Completion:* Delayed by 4 days (Expected: 2026-07-05 vs. Target: 2026-07-01).\n`;
+      reply += `3. **NextGen Core API** - **On-Time Delivery: 92% (Low Risk)**\n\n`;
+      reply += `**Mitigation Recommendation:** Delegate WebSocket tasks to bench engineers or reduce scope of Phase 4 customer portal.\n`;
+      return reply;
+    }
+
+    // 12d. "Suggest improvements for [Project]"
+    if (msg.includes('suggest improvements') || msg.includes('improvements for') || msg.includes('improvement')) {
+      const isCoreApi = msg.includes('nextgen') || msg.includes('core api');
+      const isTalent = msg.includes('talent') || msg.includes('extractor');
+      
+      let reply = `### AI Delivery Stabilization Recommendations\n\n`;
+      if (isCoreApi) {
+        reply += `#### Recommendations for **NextGen Core API**:\n`;
+        reply += `1. **Upskill DevOps Backups:** Enroll James O'Connor in *AWS Certified Solutions Architect* to resolve Alex Rivera's SPOF. (+8% Health Score Improvement)\n`;
+        reply += `2. **Split Allocation:** Balance Alex Rivera's workload 50/50 using the Conflict Resolver. (+5% Health Score Improvement)\n`;
+      } else if (isTalent) {
+        reply += `#### Recommendations for **AI Talent Extractor**:\n`;
+        reply += `1. **Assign Backend Support:** Assign Marcus Vance to assist with resume parsing schemas to offload Sarah Chen. (+15% Delivery Confidence Improvement)\n`;
+        reply += `2. **Upskill in LLMs:** Enroll Sofia Martinez in *Generative AI & LLM Fine-Tuning Bootcamp* to assist Sarah. (+12% Health Score Improvement)\n`;
+      } else {
+        reply += `#### Recommendations for **Customer Portal Redesign**:\n`;
+        reply += `1. **Assign QA Engineer:** Hire a Senior QA Specialist or assign Sofia Martinez to WebSocket test pipelines immediately. (**Health Score rises by +26% to Healthy**)\n`;
+        reply += `2. **Increase Budget:** Request an additional $15,000 contingency buffer to cover overrun risks. (+18% On-Time Probability Improvement)\n`;
+        reply += `3. **Delay Release by One Week:** Adjust target timeline to accommodate testing blockages. (+10% Confidence Score Improvement)\n`;
+      }
+      reply += `\n[ACTION: navigate | target: projects | label: View Project Insights]`;
+      return reply;
+    }
+
+    // 13. "Summarize engineering health."
+    if (msg.includes('engineering health') || msg.includes('engineering') && msg.includes('health')) {
+      let reply = `### Department Health Index: **Engineering**\n\n`;
+      reply += `*   **Total Headcount**: 4 Engineers (Alex, Elena, Aisha, James)\n`;
+      reply += `*   **Average Capability Score**: 84.5% (High Competency)\n`;
+      reply += `*   **Primary Bottleneck**: Kubernetes & Infrastructure deployment knowledge is highly siloed in Aisha Rahman.\n`;
+      reply += `*   **Bench Strength**: 0% (All engineers are fully loaded on active projects).\n\n`;
+      reply += `#### Key Recommendations:\n`;
+      reply += `1. Enroll James O'Connor in a DevOps upskilling pathway to mitigate SPOF risks.\n`;
+      reply += `2. Open a requisition for 1 additional DevOps specialist.\n`;
+      return reply;
     }
 
     // Default reply
-    return `### Workforce Intelligence Chatbot\n\nHello! I am your AI assistant, capable of querying employee capabilities, project requirements, and organizational skill gaps.\n\nHere are some questions you can ask me:\n- *"Who is the best React developer?"*\n- *"Who should be promoted next?"*\n- *"Who is qualified to lead our upcoming AI project?"*\n- *"What are our main cloud/infrastructure skill weaknesses?"*\n- *"What skills should we hire for next?"*`;
+    return `### Executive AI Copilot\n\nHello! I am your workforce analytics executive assistant. I have full semantic access to all Employee, Project, and Skill datasets.\n\nHere are some advanced strategic queries you can ask me:\n- *"Who reports to Alex Rivera?"*\n- *"Who has worked with Banking + AWS?"*\n- *"Who should replace Alex Rivera?"*\n- *"Which engineers are promotion ready?"*\n- *"Which project is most risky?"*\n- *"Can we take another banking project?"*\n- *"Who is overloaded?"*\n- *"Summarize engineering health."*\n- *"Who is likely to resign?"*`;
   }
+
 }
 
 export const aiService = new AIService();

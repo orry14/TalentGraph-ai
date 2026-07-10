@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../components/GlassCard';
 import { SkeletonCard, SkeletonList } from '../components/LoadingSkeleton';
+import { SuccessionSimulator } from '../components/SuccessionSimulator';
+import { SemanticSearch } from '../components/SemanticSearch';
 import { Employee, api, LearningRecommendation, PromotionEvaluation } from '../utils/api';
 import {
   Search,
@@ -34,10 +36,13 @@ export const Employees: React.FC<EmployeesProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStage, setUploadStage] = useState('');
+  const [isDraggingResume, setIsDraggingResume] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [isUpdatingRecs, setIsUpdatingRecs] = useState(false);
   const [isUpdatingPromotion, setIsUpdatingPromotion] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   // Set initial selected employee
   useEffect(() => {
@@ -66,24 +71,42 @@ export const Employees: React.FC<EmployeesProps> = ({
   }, [selectedId, employees]);
 
   // Handle resume uploading
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processResumeFiles = async (files: FileList | File[]) => {
+    const selectedFiles = Array.from(files).filter(Boolean);
+    if (selectedFiles.length === 0) return;
     setIsUploading(true);
     setUploadError(null);
+    setUploadStage(`Uploading ${selectedFiles.length} resume${selectedFiles.length > 1 ? 's' : ''}`);
 
     try {
-      const newEmp = await api.uploadResume(file);
-      setEmployees(prev => [newEmp, ...prev]);
-      setSelectedId(newEmp.id);
+      setTimeout(() => setUploadStage('Extracting text'), 250);
+      setTimeout(() => setUploadStage('Parsing resume JSON'), 650);
+      setTimeout(() => setUploadStage('Generating AI profile'), 1000);
+      if (selectedFiles.length === 1) {
+        const newEmp = await api.uploadResume(selectedFiles[0]);
+        setEmployees(prev => [newEmp, ...prev]);
+        setSelectedId(newEmp.id);
+      } else {
+        const result = await api.uploadResumes(selectedFiles);
+        setEmployees(prev => [...result.employees, ...prev]);
+        if (result.employees[0]) setSelectedId(result.employees[0].id);
+        if (result.failures.length) {
+          setUploadError(`${result.failures.length} file(s) failed. ${result.failures[0].error}`);
+        }
+      }
       refreshStats();
     } catch (err: any) {
       console.error(err);
       setUploadError(err.message || 'Failed to process resume');
     } finally {
       setIsUploading(false);
+      setUploadStage('');
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) await processResumeFiles(e.target.files);
+    e.target.value = '';
   };
 
   // Re-run AI Learning recommendations
@@ -133,16 +156,28 @@ export const Employees: React.FC<EmployeesProps> = ({
         {/* Resume Upload Box */}
         <GlassCard className="p-4 shrink-0">
           <h4 className="font-outfit font-bold text-sm text-slate-200 mb-2">Resume Intelligence</h4>
-          <p className="text-[10px] text-slate-500 mb-3">Upload PDF resume to parse and generate candidate profile automatically</p>
+          <p className="text-[10px] text-slate-500 mb-3">Upload resumes to parse structured JSON and generate candidate profiles automatically</p>
 
-          <label className={`border border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
-            isUploading 
+          <label
+            onDragOver={e => {
+              e.preventDefault();
+              setIsDraggingResume(true);
+            }}
+            onDragLeave={() => setIsDraggingResume(false)}
+            onDrop={e => {
+              e.preventDefault();
+              setIsDraggingResume(false);
+              processResumeFiles(e.dataTransfer.files);
+            }}
+            className={`border border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+            isUploading || isDraggingResume
               ? 'border-blue-500/40 bg-blue-500/5' 
               : 'border-slate-800 hover:border-blue-500/30 hover:bg-slate-900/30'
           }`}>
             <input
               type="file"
-              accept=".pdf,.txt"
+              accept=".pdf,.txt,.docx,.zip,.png,.jpg,.jpeg,.webp"
+              multiple
               className="hidden"
               onChange={handleFileUpload}
               disabled={isUploading}
@@ -150,13 +185,16 @@ export const Employees: React.FC<EmployeesProps> = ({
             {isUploading ? (
               <div className="flex flex-col items-center space-y-2 py-2">
                 <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
-                <span className="text-[10px] font-bold text-blue-400">AI Parsing Resume...</span>
+                <span className="text-[10px] font-bold text-blue-400">{uploadStage || 'AI Parsing Resume...'}</span>
+                <div className="h-1.5 w-40 bg-slate-900 rounded-full overflow-hidden">
+                  <div className="h-full w-2/3 bg-blue-500 animate-pulse rounded-full" />
+                </div>
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-1.5 py-1">
                 <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-blue-400" />
-                <span className="text-xs font-semibold text-slate-300">Upload PDF / Text Resume</span>
-                <span className="text-[9px] text-slate-600">Files up to 5MB</span>
+                <span className="text-xs font-semibold text-slate-300">Upload or Drop Resumes</span>
+                <span className="text-[9px] text-slate-600">PDF, DOCX, TXT, ZIP, image resumes | multiple files</span>
               </div>
             )}
           </label>
@@ -166,17 +204,8 @@ export const Employees: React.FC<EmployeesProps> = ({
         </GlassCard>
 
         {/* Filter controls */}
-        <div className="space-y-3 shrink-0">
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search name, role, or skills..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full glass-input pl-9 pr-4 py-2.5 rounded-xl text-xs text-slate-100 placeholder:text-slate-600"
-            />
-          </div>
+        <div className="space-y-3 shrink-0 z-40">
+          <SemanticSearch onSelectEmployee={setSelectedId} />
 
           <div className="flex space-x-1 overflow-x-auto pb-1">
             {departments.map(dept => (
@@ -272,13 +301,29 @@ export const Employees: React.FC<EmployeesProps> = ({
               </div>
 
               {/* Bio Profile summary */}
-              <div className="mt-5 pt-5 border-t border-slate-900">
-                <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">AI Profile Insights</h5>
-                <p className="text-xs text-slate-300 leading-relaxed italic">
-                  "{selectedEmployee.profileSummary}"
-                </p>
+              <div className="mt-5 pt-5 border-t border-slate-900 flex justify-between items-end gap-4">
+                <div className="flex-1">
+                  <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">AI Profile Insights</h5>
+                  <p className="text-xs text-slate-300 leading-relaxed italic">
+                    "{selectedEmployee.profileSummary}"
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowSimulator(true)}
+                  className="shrink-0 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 font-bold text-xs rounded-xl transition-colors flex items-center gap-2"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI Career Simulator
+                </button>
               </div>
             </GlassCard>
+
+            {showSimulator && (
+              <SuccessionSimulator
+                employee={selectedEmployee}
+                onClose={() => setShowSimulator(false)}
+              />
+            )}
 
             {/* Middle: Skills & Experience Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
