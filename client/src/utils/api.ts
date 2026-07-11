@@ -321,7 +321,7 @@ export interface RecruitmentDashboard {
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000/api';
 
-
+import { mockEmployees, mockProjects, mockDashboardStats, mockGapAnalysis } from './mockData';
 
 export const api = {
   async login(email: string, password: string): Promise<{ user: any; token: string }> {
@@ -338,15 +338,25 @@ export const api = {
   },
 
   async getEmployees(): Promise<Employee[]> {
-    const res = await fetch(`${API_BASE}/employees`);
-    if (!res.ok) throw new Error('Failed to fetch employees');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/employees`);
+      if (!res.ok) throw new Error('Failed to fetch employees');
+      return await res.json();
+    } catch (e) {
+      console.warn('Backend unavailable, using mock employees');
+      return mockEmployees;
+    }
   },
 
   async getProjects(): Promise<Project[]> {
-    const res = await fetch(`${API_BASE}/projects`);
-    if (!res.ok) throw new Error('Failed to fetch projects');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/projects`);
+      if (!res.ok) throw new Error('Failed to fetch projects');
+      return await res.json();
+    } catch (e) {
+      console.warn('Backend unavailable, using mock projects');
+      return mockProjects;
+    }
   },
 
   async getEmployeeById(id: string): Promise<Employee> {
@@ -356,15 +366,25 @@ export const api = {
   },
 
   async getDashboardStats(): Promise<DashboardStats> {
-    const res = await fetch(`${API_BASE}/dashboard/stats`);
-    if (!res.ok) throw new Error('Failed to fetch dashboard stats');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/dashboard/stats`);
+      if (!res.ok) throw new Error('Failed to fetch dashboard stats');
+      return await res.json();
+    } catch (e) {
+      console.warn('Backend unavailable, using mock dashboard stats');
+      return mockDashboardStats;
+    }
   },
 
   async getGapAnalysis(): Promise<SkillGapReport> {
-    const res = await fetch(`${API_BASE}/gap-analysis`);
-    if (!res.ok) throw new Error('Failed to fetch gap analysis');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/gap-analysis`);
+      if (!res.ok) throw new Error('Failed to fetch gap analysis');
+      return await res.json();
+    } catch (e) {
+      console.warn('Backend unavailable, using mock gap analysis');
+      return mockGapAnalysis;
+    }
   },
 
   async getCapabilityRisks(): Promise<CapabilityRisk[]> {
