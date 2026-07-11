@@ -20,20 +20,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>({ id: 'admin', email: 'admin@workforce.ai', name: 'Admin User', role: 'admin' });
+  const [token, setToken] = useState<string | null>('mock-token');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Load credentials from localStorage
-    const savedUser = localStorage.getItem('tg_user');
-    const savedToken = localStorage.getItem('tg_token');
-
-    if (savedUser && savedToken) {
-      setUser(JSON.parse(savedUser));
-      setToken(savedToken);
-    }
-    setLoading(false);
+    // Auth bypassed
   }, []);
 
   const login = async (email: string, password: string) => {
