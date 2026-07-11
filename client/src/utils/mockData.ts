@@ -69,7 +69,6 @@ export const mockProjects: Project[] = [
     healthScore: 92,
     healthLevel: 'Excellent',
     budget: 150000,
-    budgetUsed: 45000,
     priority: 'High'
   },
   {
@@ -83,7 +82,6 @@ export const mockProjects: Project[] = [
     healthScore: 78,
     healthLevel: 'Healthy',
     budget: 200000,
-    budgetUsed: 10000,
     priority: 'High'
   }
 ];
