@@ -9,7 +9,6 @@ import { GapAnalysis } from './pages/GapAnalysis';
 import { SkillGraph } from './pages/SkillGraph';
 import { Projects } from './pages/Projects';
 import { Recruitment } from './pages/Recruitment';
-import { Login } from './pages/Login';
 import { api, Employee, Project, DashboardStats, SkillGapReport } from './utils/api';
 import { SkeletonTable } from './components/LoadingSkeleton';
 
@@ -78,9 +77,8 @@ function AppContent() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login />;
-  }
+  // Authentication is disabled
+
 
   // Active view routing
   const renderContent = () => {
