@@ -480,18 +480,18 @@ export const Projects: React.FC = () => {
   // Circular progress helper for health score
   const getHealthColorClass = (score: number) => {
     if (score >= 90) return 'text-emerald-500 border-emerald-500/20';
-    if (score >= 75) return 'text-blue-500 border-blue-500/20';
+    if (score >= 75) return 'text-brand border-brand/20';
     if (score >= 60) return 'text-yellow-500 border-yellow-500/20';
-    if (score >= 40) return 'text-orange-500 border-orange-500/20';
-    return 'text-red-500 border-red-500/20';
+    if (score >= 40) return 'text-danger border-danger/20';
+    return 'text-danger border-danger/20';
   };
 
   const getHealthBGClass = (score: number) => {
     if (score >= 90) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    if (score >= 75) return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+    if (score >= 75) return 'bg-brand-tint text-brand border-brand/20';
     if (score >= 60) return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    if (score >= 40) return 'bg-orange-500/10 text-orange-400 border-orange-500/20';
-    return 'bg-red-500/10 text-red-400 border-red-500/20';
+    if (score >= 40) return 'bg-danger-tint text-danger border-danger/20';
+    return 'bg-danger-tint text-danger border-danger/20';
   };
 
   // Recharts calculations
@@ -538,52 +538,52 @@ export const Projects: React.FC = () => {
       {/* 1. Project Command Dashboard KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Total / Active</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Total / Active</span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className="text-2xl font-outfit font-black text-slate-200">{stats.totalProjects}</span>
-            <span className="text-xs text-slate-600">/</span>
-            <span className="text-sm font-semibold text-blue-400">{stats.activeProjects} Active</span>
+            <span className="text-2xl font-outfit font-black text-text-primary">{stats.totalProjects}</span>
+            <span className="text-xs text-text-muted">/</span>
+            <span className="text-sm font-semibold text-brand">{stats.activeProjects} Active</span>
           </div>
-          <p className="text-[9px] text-slate-600 mt-1">Enterprise projects registry</p>
+          <p className="text-[9px] text-text-muted mt-1">Enterprise projects registry</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Delayed / On Hold</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Delayed / On Hold</span>
           <div className="flex items-baseline space-x-2 mt-2">
             <span className="text-2xl font-outfit font-black text-rose-500">{stats.delayedProjects}</span>
-            <span className="text-xs text-slate-600">/</span>
-            <span className="text-sm font-semibold text-slate-400">{stats.onHoldProjects} On Hold</span>
+            <span className="text-xs text-text-muted">/</span>
+            <span className="text-sm font-semibold text-text-secondary">{stats.onHoldProjects} On Hold</span>
           </div>
           <p className="text-[9px] text-rose-500/80 mt-1">Attention required alerts</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Average Portfolio Health</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Average Portfolio Health</span>
           <div className="flex items-baseline space-x-2 mt-2">
             <span className={`text-2xl font-outfit font-black ${stats.averageDeliveryHealth >= 75 ? 'text-emerald-400' : 'text-yellow-500'}`}>
               {stats.averageDeliveryHealth}%
             </span>
           </div>
-          <p className="text-[9px] text-slate-600 mt-1">Weighted KPI scoring index</p>
+          <p className="text-[9px] text-text-muted mt-1">Weighted KPI scoring index</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Budget Utilization</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Budget Utilization</span>
           <div className="flex flex-col mt-2">
-            <span className="text-sm font-bold text-slate-200">${stats.budgetUsed.toLocaleString()} Used</span>
-            <span className="text-[10px] text-slate-500 mt-0.5">Total: ${stats.totalBudget.toLocaleString()}</span>
+            <span className="text-sm font-bold text-text-primary">${stats.budgetUsed.toLocaleString()} Used</span>
+            <span className="text-[10px] text-text-secondary mt-0.5">Total: ${stats.totalBudget.toLocaleString()}</span>
           </div>
-          <div className="w-full bg-slate-900 rounded-full h-1 mt-2.5 overflow-hidden">
+          <div className="w-full bg-surface-card rounded-full h-1 mt-2.5 overflow-hidden">
             <div className="bg-blue-500 h-full rounded-full animate-pulse" style={{ width: `${Math.min(100, Math.round((stats.budgetUsed / Math.max(1, stats.totalBudget)) * 100))}%` }} />
           </div>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Team Utilization</span>
+          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Team Utilization</span>
           <div className="flex items-baseline space-x-2 mt-2">
             <span className="text-2xl font-outfit font-black text-indigo-400">{stats.averageTeamUtilization}%</span>
           </div>
-          <p className="text-[9px] text-slate-600 mt-1">Allocated active bench strength</p>
+          <p className="text-[9px] text-text-muted mt-1">Allocated active bench strength</p>
         </GlassCard>
       </div>
 
@@ -595,15 +595,15 @@ export const Projects: React.FC = () => {
           <GlassCard className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div>
-                <h3 className="font-outfit font-extrabold text-base text-slate-200">Company Project Directory</h3>
-                <p className="text-xs text-slate-500">Search, filter, and execute operational CRUD tasks on portfolio projects.</p>
+                <h3 className="font-outfit font-extrabold text-base text-text-primary">Company Project Directory</h3>
+                <p className="text-xs text-text-secondary">Search, filter, and execute operational CRUD tasks on portfolio projects.</p>
               </div>
               <button
                 onClick={() => {
                   setFormProject({ tags: [], requiredSkills: ['React', 'TypeScript'] });
                   setIsCreateOpen(true);
                 }}
-                className="py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-[0_4px_15px_rgba(59,130,246,0.25)] transition-all"
+                className="py-2.5 px-4 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-card transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Project</span>
@@ -613,20 +613,20 @@ export const Projects: React.FC = () => {
             {/* Filters Bar */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-slate-600 absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-text-muted absolute left-3 top-3" />
                 <input
                   type="text"
                   placeholder="Search project name..."
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs py-2.5 pl-9 text-slate-300 placeholder:text-slate-700"
+                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs py-2.5 pl-9 text-text-primary placeholder:text-text-muted"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2.5 text-slate-400"
+                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
               >
                 <option value="">All Statuses</option>
                 <option value="Planning">Planning</option>
@@ -640,7 +640,7 @@ export const Projects: React.FC = () => {
               <select
                 value={priorityFilter}
                 onChange={e => { setPriorityFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2.5 text-slate-400"
+                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
               >
                 <option value="">All Priorities</option>
                 <option value="High">High</option>
@@ -651,7 +651,7 @@ export const Projects: React.FC = () => {
               <select
                 value={healthFilter}
                 onChange={e => { setHealthFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2.5 text-slate-400"
+                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
               >
                 <option value="">All Health Scores</option>
                 <option value="Excellent">Excellent (&ge;90)</option>
@@ -667,7 +667,7 @@ export const Projects: React.FC = () => {
               <select
                 value={clientFilter}
                 onChange={e => { setClientFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950/40 border border-slate-900 rounded-lg text-[10px] p-2 text-slate-500"
+                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
               >
                 <option value="">All Clients</option>
                 {distinctClients.map(c => <option key={c} value={c}>{c}</option>)}
@@ -676,7 +676,7 @@ export const Projects: React.FC = () => {
               <select
                 value={industryFilter}
                 onChange={e => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950/40 border border-slate-900 rounded-lg text-[10px] p-2 text-slate-500"
+                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
               >
                 <option value="">All Industries</option>
                 {distinctIndustries.map(i => <option key={i} value={i}>{i}</option>)}
@@ -685,7 +685,7 @@ export const Projects: React.FC = () => {
               <select
                 value={managerFilter}
                 onChange={e => { setManagerFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-slate-950/40 border border-slate-900 rounded-lg text-[10px] p-2 text-slate-500"
+                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
               >
                 <option value="">All Managers</option>
                 {distinctManagers.map(m => <option key={m} value={m}>{m}</option>)}
@@ -703,7 +703,7 @@ export const Projects: React.FC = () => {
                     setSearchQuery('');
                     setCurrentPage(1);
                   }}
-                  className="px-3 text-[10px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/10 rounded-lg hover:bg-blue-500/20 transition-colors"
+                  className="px-3 text-[10px] font-bold text-brand bg-brand-tint border border-brand/20 rounded-lg hover:bg-brand-hover/20 transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -714,34 +714,34 @@ export const Projects: React.FC = () => {
             {isLoading ? (
               <SkeletonTable />
             ) : processedProjects.length === 0 ? (
-              <div className="py-20 text-center text-slate-600 text-xs">No projects match the current filtering parameters.</div>
+              <div className="py-20 text-center text-text-muted text-xs">No projects match the current filtering parameters.</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-slate-900 text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('name')}>
+                <table className="w-full text-left border-collapse border border-border bg-surface-card rounded-md overflow-hidden shadow-card">
+                  <thead className="bg-surface-sunken">
+                    <tr className="border-b border-border text-[10px] text-text-secondary uppercase tracking-wider font-extrabold">
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('name')}>
                         <div className="flex items-center gap-1">Project Name <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('client')}>
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('client')}>
                         <div className="flex items-center gap-1">Client / BU <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('priority')}>
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('priority')}>
                         <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('status')}>
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('status')}>
                         <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('budget')}>
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('budget')}>
                         <div className="flex items-center gap-1">Budget <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 cursor-pointer" onClick={() => handleSort('healthScore')}>
+                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('healthScore')}>
                         <div className="flex items-center gap-1">Health Score <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="pb-3 text-right">Actions</th>
+                      <th className="p-3 text-text-secondary text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-900/50">
+                  <tbody className="divide-y divide-border">
                     {paginatedProjects.map(proj => {
                       const score = proj.healthScore || 100;
                       const isSelected = selectedProject?.project.id === proj.id;
@@ -749,66 +749,66 @@ export const Projects: React.FC = () => {
                         <tr
                           key={proj.id}
                           onClick={() => handleSelectProject(proj.id)}
-                          className={`group cursor-pointer transition-colors ${isSelected ? 'bg-blue-600/5' : 'hover:bg-slate-900/25'}`}
+                          className={`group cursor-pointer transition-colors ${isSelected ? 'bg-brand-tint' : 'hover:bg-surface-card hover:bg-surface-sunken'}`}
                         >
-                          <td className="py-4 pr-3">
-                            <div className="font-bold text-xs text-slate-200 group-hover:text-blue-400 transition-colors">{proj.name}</div>
-                            <div className="text-[10px] text-slate-500 mt-0.5">{proj.projectCode || 'No Code'}</div>
+                          <td className="p-3 pr-3">
+                            <div className="font-bold text-xs text-text-primary group-hover:text-brand transition-colors">{proj.name}</div>
+                            <div className="text-[10px] text-text-secondary mt-0.5">{proj.projectCode || 'No Code'}</div>
                           </td>
-                          <td className="py-4 px-1 text-xs">
-                            <div className="font-semibold text-slate-300">{proj.client || 'Internal'}</div>
-                            <div className="text-[10px] text-slate-600 mt-0.5">{proj.businessUnit || 'General'}</div>
+                          <td className="p-3 px-1 text-xs">
+                            <div className="font-semibold text-text-primary">{proj.client || 'Internal'}</div>
+                            <div className="text-[10px] text-text-muted mt-0.5">{proj.businessUnit || 'General'}</div>
                           </td>
-                          <td className="py-4 px-1 text-xs">
+                          <td className="p-3 px-1 text-xs">
                             <span className={`px-2 py-0.5 text-[9px] font-bold border rounded-md ${
-                              proj.priority === 'High' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              proj.priority === 'Medium' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                              'bg-slate-500/10 text-slate-400 border-slate-800'
+                              proj.priority === 'High' ? 'bg-danger-tint text-danger border-danger/20' :
+                              proj.priority === 'Medium' ? 'bg-danger-tint text-danger border-danger/20' :
+                              'bg-slate-500/10 text-text-secondary border-border'
                             }`}>
                               {proj.priority}
                             </span>
                           </td>
-                          <td className="py-4 px-1 text-xs">
+                          <td className="p-3 px-1 text-xs">
                             <span className={`px-2 py-0.5 text-[9px] font-bold border rounded-md ${
-                              proj.status === 'Active' ? 'bg-blue-500/15 text-blue-400 border-blue-500/20' :
+                              proj.status === 'Active' ? 'bg-brand-tint text-brand border-brand/20' :
                               proj.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                               proj.status === 'Delayed' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
                               proj.status === 'On Hold' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                              'bg-slate-500/10 text-slate-500 border-slate-900'
+                              'bg-slate-500/10 text-text-secondary border-border'
                             }`}>
                               {proj.status}
                             </span>
                           </td>
-                          <td className="py-4 px-1 text-xs font-bold text-slate-300">
+                          <td className="p-3 px-1 text-xs font-bold text-text-primary">
                             ${(proj.budget || 0).toLocaleString()}
                           </td>
-                          <td className="py-4 px-1 text-xs">
+                          <td className="p-3 px-1 text-xs">
                             <span className={`px-2 py-1 rounded-lg text-[10px] font-extrabold border ${getHealthBGClass(score)}`}>
                               {score}% {proj.healthLevel || 'Excellent'}
                             </span>
                           </td>
-                          <td className="py-4 text-right">
+                          <td className="p-3 text-right">
                             <div className="flex items-center justify-end gap-1.5" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => {
                                   setFormProject(proj);
                                   setIsEditOpen(true);
                                 }}
-                                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition-colors"
+                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
                                 title="Edit Project"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDuplicateProject(proj)}
-                                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition-colors"
+                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
                                 title="Duplicate Project"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleArchiveProject(proj)}
-                                className="p-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-slate-200 rounded-lg transition-colors"
+                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
                                 title="Archive Project"
                               >
                                 <Archive className="w-3.5 h-3.5" />
@@ -832,20 +832,20 @@ export const Projects: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-900">
-                <span className="text-[10px] text-slate-500">Showing page {currentPage} of {totalPages}</span>
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
+                <span className="text-[10px] text-text-secondary">Showing page {currentPage} of {totalPages}</span>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="p-2 text-xs bg-slate-950 hover:bg-slate-900 disabled:opacity-50 text-slate-400 border border-slate-900 rounded-lg"
+                    className="p-2 text-xs bg-surface-sunken hover:bg-surface-card disabled:opacity-50 text-text-secondary border border-border rounded-lg"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-2 text-xs bg-slate-950 hover:bg-slate-900 disabled:opacity-50 text-slate-400 border border-slate-900 rounded-lg"
+                    className="p-2 text-xs bg-surface-sunken hover:bg-surface-card disabled:opacity-50 text-text-secondary border border-border rounded-lg"
                   >
                     Next
                   </button>
@@ -858,26 +858,26 @@ export const Projects: React.FC = () => {
         {/* Right Column: Project Detail Panel (Tabs Overview/AI Insights/Timeline) */}
         <div className="xl:col-span-4 h-full">
           {isDetailLoading ? (
-            <GlassCard className="p-8 text-center"><RefreshCw className="w-6 h-6 text-blue-500 animate-spin mx-auto mb-2" /><span className="text-xs text-slate-500">Loading project analytics...</span></GlassCard>
+            <GlassCard className="p-8 text-center"><RefreshCw className="w-6 h-6 text-brand animate-spin mx-auto mb-2" /><span className="text-xs text-text-secondary">Loading project analytics...</span></GlassCard>
           ) : !selectedProject ? (
-            <GlassCard className="p-8 text-center text-xs text-slate-600 flex flex-col items-center justify-center h-80">
-              <FolderGit className="w-10 h-10 text-slate-700 mb-2" />
+            <GlassCard className="p-8 text-center text-xs text-text-muted flex flex-col items-center justify-center h-80">
+              <FolderGit className="w-10 h-10 text-text-muted mb-2" />
               <span>Select a project from the directory list to load the executive cockpit and AI insights.</span>
             </GlassCard>
           ) : (
             <div className="space-y-6">
               
               {/* Project Header details & Health Score circle */}
-              <GlassCard glow className="p-5 border-blue-500/10">
+              <GlassCard glow className="p-5 border-brand/20">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="px-2 py-0.5 bg-slate-900 border border-slate-800 text-blue-400 font-extrabold text-[8px] tracking-widest uppercase rounded">
+                    <span className="px-2 py-0.5 bg-surface-card border border-border text-brand font-extrabold text-[8px] tracking-widest uppercase rounded">
                       {selectedProject.project.projectCode || 'GENERAL'}
                     </span>
-                    <h3 className="font-outfit font-black text-slate-200 mt-2 text-base leading-tight">
+                    <h3 className="font-outfit font-black text-text-primary mt-2 text-base leading-tight">
                       {selectedProject.project.name}
                     </h3>
-                    <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{selectedProject.project.description}</p>
+                    <p className="text-[10px] text-text-secondary mt-1 line-clamp-2">{selectedProject.project.description}</p>
                   </div>
                   
                   {/* Health Score Circular indicator */}
@@ -885,23 +885,23 @@ export const Projects: React.FC = () => {
                     <div className={`w-14 h-14 border-[3px] rounded-full flex flex-col items-center justify-center font-outfit font-black text-sm relative ${getHealthColorClass(selectedProject.healthScore)}`}>
                       {selectedProject.healthScore}%
                     </div>
-                    <span className="text-[8px] font-bold uppercase tracking-wider text-slate-500 mt-1">Health Score</span>
+                    <span className="text-[8px] font-bold uppercase tracking-wider text-text-secondary mt-1">Health Score</span>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-400">
-                  <span>Manager: <strong className="text-slate-300">{selectedProject.project.projectManager || 'Unassigned'}</strong></span>
-                  <span>End Date: <strong className="text-slate-300">{selectedProject.project.endDate || 'N/A'}</strong></span>
+                <div className="mt-4 pt-3 border-t border-border flex justify-between items-center text-[10px] text-text-secondary">
+                  <span>Manager: <strong className="text-text-primary">{selectedProject.project.projectManager || 'Unassigned'}</strong></span>
+                  <span>End Date: <strong className="text-text-primary">{selectedProject.project.endDate || 'N/A'}</strong></span>
                 </div>
               </GlassCard>
 
               {/* Sub-tabs selector */}
-              <div className="flex overflow-x-auto gap-1 bg-slate-950 p-1 border border-slate-900 rounded-xl">
+              <div className="flex overflow-x-auto gap-1 bg-surface-sunken p-1 border border-border rounded-xl">
                 {(['overview', 'health', 'team', 'timeline', 'skills', 'documents', 'risks'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === tab ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === tab ? 'bg-brand text-white text-white' : 'text-text-secondary hover:text-text-primary'}`}
                   >
                     {tab}
                   </button>
@@ -911,39 +911,39 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: OVERVIEW */}
               {activeTab === 'overview' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-blue-400" /> Basic Information</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-brand" /> Basic Information</h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Client</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.client || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Client</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.client || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Industry</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.industry || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Industry</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.industry || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Business Unit</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.businessUnit || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Business Unit</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.businessUnit || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Start Date</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.startDate || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Start Date</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.startDate || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Technical Lead</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.technicalLead || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Technical Lead</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.technicalLead || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600 block">Delivery Lead</span>
-                      <span className="font-bold text-slate-300">{selectedProject.project.deliveryLead || 'N/A'}</span>
+                      <span className="text-[10px] text-text-muted block">Delivery Lead</span>
+                      <span className="font-bold text-text-primary">{selectedProject.project.deliveryLead || 'N/A'}</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-900">
-                    <span className="text-[10px] text-slate-600 block mb-1.5">Project Tags</span>
+                  <div className="mt-4 pt-3 border-t border-border">
+                    <span className="text-[10px] text-text-muted block mb-1.5">Project Tags</span>
                     <div className="flex flex-wrap gap-1.5">
                       {(selectedProject.project.tags || []).map((t: string) => (
-                        <span key={t} className="text-[9px] bg-slate-900 border border-slate-800 text-slate-400 px-2 py-0.5 rounded-lg">{t}</span>
+                        <span key={t} className="text-[9px] bg-surface-card border border-border text-text-secondary px-2 py-0.5 rounded-lg">{t}</span>
                       ))}
                     </div>
                   </div>
@@ -953,18 +953,18 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: HEALTH */}
               {activeTab === 'health' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-4 h-4 text-blue-400" /> AI Project Health Engine</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-4 h-4 text-brand" /> AI Project Health Engine</h4>
                   
                   {/* Health Trends */}
                   <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="p-3 bg-slate-900/30 border border-slate-900 rounded-xl">
-                      <span className="text-[8px] font-bold text-slate-500 uppercase block">Weekly Trend</span>
+                    <div className="p-3 bg-surface-card/30 border border-border rounded-xl">
+                      <span className="text-[8px] font-bold text-text-secondary uppercase block">Weekly Trend</span>
                       <span className={`text-sm font-black mt-1 block ${selectedProject.healthTrendWeek >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
                         {selectedProject.healthTrendWeek >= 0 ? `+${selectedProject.healthTrendWeek}` : selectedProject.healthTrendWeek}%
                       </span>
                     </div>
-                    <div className="p-3 bg-slate-900/30 border border-slate-900 rounded-xl">
-                      <span className="text-[8px] font-bold text-slate-500 uppercase block">Monthly Trend</span>
+                    <div className="p-3 bg-surface-card/30 border border-border rounded-xl">
+                      <span className="text-[8px] font-bold text-text-secondary uppercase block">Monthly Trend</span>
                       <span className={`text-sm font-black mt-1 block ${selectedProject.healthTrendMonth >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
                         {selectedProject.healthTrendMonth >= 0 ? `+${selectedProject.healthTrendMonth}` : selectedProject.healthTrendMonth}%
                       </span>
@@ -972,31 +972,31 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* AI Explanation reasoning */}
-                  <div className="p-4 bg-slate-900/20 border border-slate-900 rounded-2xl">
-                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-blue-400"><Brain className="w-3.5 h-3.5" /> AI Diagnostic Reasoning</div>
-                    <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">{selectedProject.healthExplanation}</p>
+                  <div className="p-4 bg-surface-card/20 border border-border rounded-2xl">
+                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-brand"><Brain className="w-3.5 h-3.5" /> AI Diagnostic Reasoning</div>
+                    <p className="text-[11px] text-text-secondary mt-2 leading-relaxed">{selectedProject.healthExplanation}</p>
                   </div>
 
                   {/* Forecast Panel dials */}
-                  <div className="space-y-3 pt-3 border-t border-slate-900">
-                    <div className="flex justify-between text-[10px] font-medium text-slate-400">
+                  <div className="space-y-3 pt-3 border-t border-border">
+                    <div className="flex justify-between text-[10px] font-medium text-text-secondary">
                       <span>Chance of On-Time Delivery</span>
-                      <span className="font-bold text-slate-200">{selectedProject.forecast.chanceOfOnTimeDelivery}%</span>
+                      <span className="font-bold text-text-primary">{selectedProject.forecast.chanceOfOnTimeDelivery}%</span>
                     </div>
-                    <div className="w-full bg-slate-950 border border-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-sunken border border-border rounded-full h-1.5 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${selectedProject.forecast.chanceOfOnTimeDelivery}%` }} />
                     </div>
 
-                    <div className="flex justify-between text-[10px] font-medium text-slate-400">
+                    <div className="flex justify-between text-[10px] font-medium text-text-secondary">
                       <span>Chance of Budget Overrun</span>
-                      <span className="font-bold text-slate-200">{selectedProject.forecast.chanceOfBudgetOverrun}%</span>
+                      <span className="font-bold text-text-primary">{selectedProject.forecast.chanceOfBudgetOverrun}%</span>
                     </div>
-                    <div className="w-full bg-slate-950 border border-slate-900 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-surface-sunken border border-border rounded-full h-1.5 overflow-hidden">
                       <div className="bg-rose-500 h-full rounded-full" style={{ width: `${selectedProject.forecast.chanceOfBudgetOverrun}%` }} />
                     </div>
 
-                    <div className="flex justify-between items-center text-[10px] text-slate-400 pt-2">
-                      <span>Est. Completion: <strong className="text-slate-200">{selectedProject.forecast.estimatedCompletionDate}</strong></span>
+                    <div className="flex justify-between items-center text-[10px] text-text-secondary pt-2">
+                      <span>Est. Completion: <strong className="text-text-primary">{selectedProject.forecast.estimatedCompletionDate}</strong></span>
                       <span>Delivery Confidence: <strong className="text-indigo-400">{selectedProject.deliveryConfidence}%</strong></span>
                     </div>
                   </div>
@@ -1006,36 +1006,36 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: TEAM ASSIGNMENT */}
               {activeTab === 'team' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Users className="w-4 h-4 text-blue-400" /> Team Allocation</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Users className="w-4 h-4 text-brand" /> Team Allocation</h4>
                   
                   {/* Members list */}
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {selectedProject.members.length === 0 ? (
-                      <div className="text-[10px] text-slate-600 text-center py-4">No team members assigned to this project yet.</div>
+                      <div className="text-[10px] text-text-muted text-center py-4">No team members assigned to this project yet.</div>
                     ) : (
                       selectedProject.members.map((m: any) => {
                         const emp = employees.find(e => e.id === m.employeeId);
                         if (!emp) return null;
                         return (
-                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-slate-900/30 border border-slate-900 rounded-xl hover:border-slate-800/80 transition-colors">
+                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-slate-950 border border-slate-800 text-[10px] font-bold text-blue-400 rounded-lg flex items-center justify-center uppercase">
+                              <div className="w-7 h-7 bg-surface-sunken border border-border text-[10px] font-bold text-brand rounded-lg flex items-center justify-center uppercase">
                                 {emp.name.split(' ').map((n: string) => n[0]).join('')}
                               </div>
                               <div>
-                                <h5 className="text-[10px] font-bold text-slate-300">{emp.name}</h5>
-                                <p className="text-[9px] text-slate-600 leading-none mt-0.5">{m.role} | {m.allocation}% allocation</p>
+                                <h5 className="text-[10px] font-bold text-text-primary">{emp.name}</h5>
+                                <p className="text-[9px] text-text-muted leading-none mt-0.5">{m.role} | {m.allocation}% allocation</p>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2 text-right">
                               <div className="text-[9px]">
-                                <div className="font-extrabold text-blue-400">{m.skillMatch}% match</div>
-                                <div className="text-slate-600 text-[8px]">Perf: {m.performance.toFixed(1)}/5</div>
+                                <div className="font-extrabold text-brand">{m.skillMatch}% match</div>
+                                <div className="text-text-muted text-[8px]">Perf: {m.performance.toFixed(1)}/5</div>
                               </div>
                               <button
                                 onClick={() => handleRemoveMember(m.id, emp.name)}
-                                className="p-1 hover:bg-rose-950/20 text-slate-600 hover:text-rose-500 rounded transition-colors"
+                                className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1047,13 +1047,13 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Member Form */}
-                  <form onSubmit={handleAddMember} className="space-y-3 pt-3 border-t border-slate-900">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase block">Assign Employee</span>
+                  <form onSubmit={handleAddMember} className="space-y-3 pt-3 border-t border-border">
+                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Assign Employee</span>
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={newMember.employeeId}
                         onChange={e => setNewMember(prev => ({ ...prev, employeeId: e.target.value }))}
-                        className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                         required
                       >
                         <option value="">Select Talent...</option>
@@ -1063,7 +1063,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newMember.role}
                         onChange={e => setNewMember(prev => ({ ...prev, role: e.target.value as any }))}
-                        className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                       >
                         <option value="Technical Lead">Technical Lead</option>
                         <option value="Backend">Backend</option>
@@ -1082,12 +1082,12 @@ export const Projects: React.FC = () => {
                         placeholder="Allocation % (e.g., 50)"
                         value={newMember.allocation}
                         onChange={e => setNewMember(prev => ({ ...prev, allocation: Number(e.target.value) }))}
-                        className="flex-1 bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                         min="10" max="100" required
                       />
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
                       >
                         Assign
                       </button>
@@ -1099,26 +1099,26 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: TIMELINE & MILESTONES */}
               {activeTab === 'timeline' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-4 h-4 text-blue-400" /> Milestones & Timeline</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-4 h-4 text-brand" /> Milestones & Timeline</h4>
                   
                   {/* Milestones list */}
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {selectedProject.milestones.length === 0 ? (
-                      <div className="text-[10px] text-slate-600 text-center py-4">No milestones scheduled yet.</div>
+                      <div className="text-[10px] text-text-muted text-center py-4">No milestones scheduled yet.</div>
                     ) : (
                       selectedProject.milestones.map((m: any) => {
                         const owner = employees.find(e => e.id === m.ownerId);
                         return (
-                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-slate-900/30 border border-slate-900 rounded-xl hover:border-slate-800/80 transition-colors">
+                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
                             <div>
-                              <h5 className="text-[10px] font-bold text-slate-300">{m.name}</h5>
-                              <p className="text-[9px] text-slate-500 mt-0.5">Due: {m.dueDate} | Owner: {owner ? owner.name : 'Unassigned'}</p>
+                              <h5 className="text-[10px] font-bold text-text-primary">{m.name}</h5>
+                              <p className="text-[9px] text-text-secondary mt-0.5">Due: {m.dueDate} | Owner: {owner ? owner.name : 'Unassigned'}</p>
                             </div>
                             
                             <div className="flex items-center gap-2">
                               <span className={`px-2 py-0.5 text-[8px] font-bold border rounded ${
-                                m.status === 'Planning' ? 'bg-slate-900 text-slate-400 border-slate-800' :
-                                m.status === 'Development' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                m.status === 'Planning' ? 'bg-surface-card text-text-secondary border-border' :
+                                m.status === 'Development' ? 'bg-brand-tint text-brand border-brand/20' :
                                 m.status === 'Testing' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
                                 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               }`}>
@@ -1126,7 +1126,7 @@ export const Projects: React.FC = () => {
                               </span>
                               <button
                                 onClick={() => handleRemoveMilestone(m.id, m.name)}
-                                className="p-1 hover:bg-rose-950/20 text-slate-600 hover:text-rose-500 rounded transition-colors"
+                                className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1138,14 +1138,14 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Milestone form */}
-                  <form onSubmit={handleAddMilestone} className="space-y-3 pt-3 border-t border-slate-900">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase block">Add Milestone</span>
+                  <form onSubmit={handleAddMilestone} className="space-y-3 pt-3 border-t border-border">
+                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Add Milestone</span>
                     <input
                       type="text"
                       placeholder="Milestone target name..."
                       value={newMilestone.name}
                       onChange={e => setNewMilestone(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                      className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                       required
                     />
 
@@ -1154,14 +1154,14 @@ export const Projects: React.FC = () => {
                         type="date"
                         value={newMilestone.dueDate}
                         onChange={e => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
-                        className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                         required
                       />
 
                       <select
                         value={newMilestone.ownerId}
                         onChange={e => setNewMilestone(prev => ({ ...prev, ownerId: e.target.value }))}
-                        className="bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                       >
                         <option value="">Owner...</option>
                         {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -1172,7 +1172,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newMilestone.status}
                         onChange={e => setNewMilestone(prev => ({ ...prev, status: e.target.value as any }))}
-                        className="flex-1 bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                       >
                         <option value="Planning">Planning</option>
                         <option value="Design">Design</option>
@@ -1184,7 +1184,7 @@ export const Projects: React.FC = () => {
                       
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
                       >
                         Add Target
                       </button>
@@ -1196,10 +1196,10 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: SKILLS & HEATMAP */}
               {activeTab === 'skills' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-blue-400" /> Project Skill Coverage</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-brand" /> Project Skill Coverage</h4>
 
                   {radarData.length === 0 ? (
-                    <div className="text-[10px] text-slate-600 text-center py-4">Define skills and assign members to generate radar charts.</div>
+                    <div className="text-[10px] text-text-muted text-center py-4">Define skills and assign members to generate radar charts.</div>
                   ) : (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
@@ -1215,13 +1215,13 @@ export const Projects: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="space-y-2 pt-3 border-t border-slate-900">
-                    <span className="text-[9px] font-bold uppercase text-slate-500">Coverage Percentage</span>
-                    <div className="flex justify-between items-center text-xs text-slate-400 mt-1">
+                  <div className="space-y-2 pt-3 border-t border-border">
+                    <span className="text-[9px] font-bold uppercase text-text-secondary">Coverage Percentage</span>
+                    <div className="flex justify-between items-center text-xs text-text-secondary mt-1">
                       <span>Roster Skill Fit Score</span>
                       <strong className="text-emerald-400">{selectedProject.metrics.skillCoverage}%</strong>
                     </div>
-                    <div className="w-full bg-slate-950 border border-slate-900 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-surface-sunken border border-border rounded-full h-2 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${selectedProject.metrics.skillCoverage}%` }} />
                     </div>
                   </div>
@@ -1231,20 +1231,20 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: DOCUMENTS */}
               {activeTab === 'documents' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><FileText className="w-4 h-4 text-blue-400" /> Shared Documents</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><FileText className="w-4 h-4 text-brand" /> Shared Documents</h4>
                   
                   {/* Documents list */}
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {selectedProject.documents.length === 0 ? (
-                      <div className="text-[10px] text-slate-600 text-center py-4">No documentation uploaded yet.</div>
+                      <div className="text-[10px] text-text-muted text-center py-4">No documentation uploaded yet.</div>
                     ) : (
                       selectedProject.documents.map((d: any) => (
-                        <div key={d.id} className="flex justify-between items-center p-2.5 bg-slate-900/30 border border-slate-900 rounded-xl hover:border-slate-800/80 transition-colors">
+                        <div key={d.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
                           <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-slate-500" />
+                            <FileText className="w-4 h-4 text-text-secondary" />
                             <div>
-                              <h5 className="text-[10px] font-bold text-slate-300 truncate w-40">{d.name}</h5>
-                              <p className="text-[8px] text-slate-600">Uploaded: {d.uploadedAt} | {d.type}</p>
+                              <h5 className="text-[10px] font-bold text-text-primary truncate w-40">{d.name}</h5>
+                              <p className="text-[8px] text-text-muted">Uploaded: {d.uploadedAt} | {d.type}</p>
                             </div>
                           </div>
 
@@ -1253,13 +1253,13 @@ export const Projects: React.FC = () => {
                               href={d.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-2 py-1 bg-slate-950 border border-slate-800 rounded text-[9px] font-bold text-blue-400 hover:bg-slate-900 transition-colors"
+                              className="px-2 py-1 bg-surface-sunken border border-border rounded text-[9px] font-bold text-brand hover:bg-surface-card transition-colors"
                             >
                               Open
                             </a>
                             <button
                               onClick={() => handleRemoveDoc(d.id, d.name)}
-                              className="p-1 hover:bg-rose-950/20 text-slate-600 hover:text-rose-500 rounded transition-colors"
+                              className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1270,14 +1270,14 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Document upload form */}
-                  <form onSubmit={handleAddDoc} className="space-y-3 pt-3 border-t border-slate-900">
-                    <span className="text-[10px] text-slate-500 font-bold uppercase block">Register/Upload Document</span>
+                  <form onSubmit={handleAddDoc} className="space-y-3 pt-3 border-t border-border">
+                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Register/Upload Document</span>
                     <input
                       type="text"
                       placeholder="Document name (e.g. Kickoff Slides)..."
                       value={newDoc.name}
                       onChange={e => setNewDoc(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                      className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                       required
                     />
 
@@ -1285,7 +1285,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newDoc.type}
                         onChange={e => setNewDoc(prev => ({ ...prev, type: e.target.value as any }))}
-                        className="flex-1 bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                       >
                         <option value="Overview">Overview</option>
                         <option value="Team">Team</option>
@@ -1299,7 +1299,7 @@ export const Projects: React.FC = () => {
                       
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold animate-pulse"
+                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold animate-pulse"
                       >
                         Register
                       </button>
@@ -1311,34 +1311,34 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: ACTIVE RISKS */}
               {activeTab === 'risks' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-slate-400 uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-blue-400" /> Flagged Risks & Mitigations</h4>
+                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-brand" /> Flagged Risks & Mitigations</h4>
                   
                   <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                     {selectedProject.risks.length === 0 ? (
-                      <div className="text-[10px] text-slate-600 text-center py-4 flex flex-col items-center justify-center gap-1.5">
+                      <div className="text-[10px] text-text-muted text-center py-4 flex flex-col items-center justify-center gap-1.5">
                         <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                         <span>No risks flagged on delivery channels.</span>
                       </div>
                     ) : (
                       selectedProject.risks.map((r: any) => (
-                        <div key={r.id} className="p-3 bg-slate-900/30 border border-slate-900 rounded-2xl space-y-2">
+                        <div key={r.id} className="p-3 bg-surface-card/30 border border-border rounded-2xl space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-black text-slate-200 uppercase tracking-wider">{r.type}</span>
+                            <span className="text-[10px] font-black text-text-primary uppercase tracking-wider">{r.type}</span>
                             <span className={`px-2 py-0.5 text-[8px] font-bold border rounded-md uppercase tracking-wider ${
-                              r.severity === 'Critical' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                              r.severity === 'High' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                              r.severity === 'Critical' ? 'bg-danger-tint text-danger border-danger/20' :
+                              r.severity === 'High' ? 'bg-danger-tint text-danger border-danger/20' :
                               r.severity === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                              'bg-slate-500/10 text-slate-400 border-slate-800'
+                              'bg-slate-500/10 text-text-secondary border-border'
                             }`}>
                               {r.severity}
                             </span>
                           </div>
                           
-                          <p className="text-[10px] text-slate-400 leading-normal">{r.description}</p>
+                          <p className="text-[10px] text-text-secondary leading-normal">{r.description}</p>
                           
-                          <div className="pt-2 border-t border-slate-900 text-[10px]">
-                            <div className="font-semibold text-blue-400 flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> AI Recommendation:</div>
-                            <p className="text-[10px] text-slate-500 mt-1 leading-normal italic">{r.recommendation}</p>
+                          <div className="pt-2 border-t border-border text-[10px]">
+                            <div className="font-semibold text-brand flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> AI Recommendation:</div>
+                            <p className="text-[10px] text-text-secondary mt-1 leading-normal italic">{r.recommendation}</p>
                             <p className="text-[9px] text-emerald-400 font-extrabold mt-1">{r.expectedImprovement}</p>
                           </div>
                         </div>
@@ -1356,92 +1356,92 @@ export const Projects: React.FC = () => {
 
       {/* 4. CRUD Modals: Create Project */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-sunken/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <GlassCard className="max-w-md w-full p-6 space-y-4">
-            <h3 className="font-outfit font-black text-base text-slate-200">Create New Project</h3>
+            <h3 className="font-outfit font-black text-base text-text-primary">Create New Project</h3>
             <form onSubmit={handleSaveCreate} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Name</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Name</label>
                   <input
                     type="text"
                     value={formProject.name || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Project Code</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Code</label>
                   <input
                     type="text"
                     placeholder="PRJ-ABC-01"
                     value={formProject.projectCode || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectCode: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">Description</label>
+                <label className="text-[9px] font-bold uppercase text-text-secondary">Description</label>
                 <textarea
                   value={formProject.description || ''}
                   onChange={e => setFormProject(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300 h-16"
+                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary h-16"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Client</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Client</label>
                   <input
                     type="text"
                     value={formProject.client || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, client: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Industry</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Industry</label>
                   <input
                     type="text"
                     value={formProject.industry || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, industry: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Business Unit</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Business Unit</label>
                   <input
                     type="text"
                     value={formProject.businessUnit || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, businessUnit: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Project Manager</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Manager</label>
                   <input
                     type="text"
                     value={formProject.projectManager || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectManager: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Status</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Status</label>
                   <select
                     value={formProject.status || 'Planning'}
                     onChange={e => setFormProject(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
@@ -1451,11 +1451,11 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Priority</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Priority</label>
                   <select
                     value={formProject.priority || 'Medium'}
                     onChange={e => setFormProject(prev => ({ ...prev, priority: e.target.value as any }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -1463,33 +1463,33 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Budget ($)</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Budget ($)</label>
                   <input
                     type="number"
                     value={formProject.budget || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Start Date</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Start Date</label>
                   <input
                     type="date"
                     value={formProject.startDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">End Date</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">End Date</label>
                   <input
                     type="date"
                     value={formProject.endDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   />
                 </div>
               </div>
@@ -1498,13 +1498,13 @@ export const Projects: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-400"
+                  className="px-4 py-2 bg-surface-card hover:bg-surface-sunken border border-border rounded-xl text-xs font-semibold text-text-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold"
+                  className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
                 >
                   Create
                 </button>
@@ -1516,91 +1516,91 @@ export const Projects: React.FC = () => {
 
       {/* CRUD Modals: Edit Project */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-surface-sunken/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <GlassCard className="max-w-md w-full p-6 space-y-4">
-            <h3 className="font-outfit font-black text-base text-slate-200">Edit Project</h3>
+            <h3 className="font-outfit font-black text-base text-text-primary">Edit Project</h3>
             <form onSubmit={handleSaveEdit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Name</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Name</label>
                   <input
                     type="text"
                     value={formProject.name || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Project Code</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Code</label>
                   <input
                     type="text"
                     value={formProject.projectCode || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectCode: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-slate-500">Description</label>
+                <label className="text-[9px] font-bold uppercase text-text-secondary">Description</label>
                 <textarea
                   value={formProject.description || ''}
                   onChange={e => setFormProject(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300 h-16"
+                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary h-16"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Client</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Client</label>
                   <input
                     type="text"
                     value={formProject.client || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, client: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Industry</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Industry</label>
                   <input
                     type="text"
                     value={formProject.industry || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, industry: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Business Unit</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Business Unit</label>
                   <input
                     type="text"
                     value={formProject.businessUnit || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, businessUnit: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Project Manager</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Manager</label>
                   <input
                     type="text"
                     value={formProject.projectManager || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectManager: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Status</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Status</label>
                   <select
                     value={formProject.status || 'Planning'}
                     onChange={e => setFormProject(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
@@ -1611,11 +1611,11 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Priority</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Priority</label>
                   <select
                     value={formProject.priority || 'Medium'}
                     onChange={e => setFormProject(prev => ({ ...prev, priority: e.target.value as any }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -1623,33 +1623,33 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Budget ($)</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Budget ($)</label>
                   <input
                     type="number"
                     value={formProject.budget || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-300"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">Start Date</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">Start Date</label>
                   <input
                     type="date"
                     value={formProject.startDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-slate-500">End Date</label>
+                  <label className="text-[9px] font-bold uppercase text-text-secondary">End Date</label>
                   <input
                     type="date"
                     value={formProject.endDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-900 rounded-xl text-xs p-2 text-slate-400"
+                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
                   />
                 </div>
               </div>
@@ -1658,13 +1658,13 @@ export const Projects: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-400"
+                  className="px-4 py-2 bg-surface-card hover:bg-surface-sunken border border-border rounded-xl text-xs font-semibold text-text-secondary"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold animate-pulse"
+                  className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold animate-pulse"
                 >
                   Save Changes
                 </button>

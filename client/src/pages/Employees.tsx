@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../components/GlassCard';
-import { SkeletonCard, SkeletonList } from '../components/LoadingSkeleton';
+import { SkeletonCard } from '../components/LoadingSkeleton';
 import { SuccessionSimulator } from '../components/SuccessionSimulator';
 import { SemanticSearch } from '../components/SemanticSearch';
 import { GitConnectModal } from '../components/GitConnectModal';
-import { Employee, api, LearningRecommendation, PromotionEvaluation } from '../utils/api';
+import { Employee, api } from '../utils/api';
 import {
   Search,
   UploadCloud,
@@ -16,6 +16,7 @@ import {
   BookOpen,
   Calendar,
   ChevronRight,
+  ChevronLeft,
   RefreshCw,
   Plus,
   FileText,
@@ -49,6 +50,10 @@ export const Employees: React.FC<EmployeesProps> = ({
   const [showSimulator, setShowSimulator] = useState(false);
   const [gitConnectPlatform, setGitConnectPlatform] = useState<'github' | 'gitlab' | null>(null);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const handleOpenGitConnect = (platform: 'github' | 'gitlab') => {
     setGitConnectPlatform(platform);
   };
@@ -65,14 +70,12 @@ export const Employees: React.FC<EmployeesProps> = ({
     }
   };
 
-  // Set initial selected employee
   useEffect(() => {
     if (employees.length > 0 && !selectedId) {
       setSelectedId(employees[0].id);
     }
   }, [employees]);
 
-  // Fetch full employee details including AI recommendations & evaluations
   useEffect(() => {
     if (!selectedId) return;
 
@@ -91,7 +94,6 @@ export const Employees: React.FC<EmployeesProps> = ({
     fetchDetails();
   }, [selectedId, employees]);
 
-  // Handle resume uploading
   const processResumeFiles = async (files: FileList | File[]) => {
     const selectedFiles = Array.from(files).filter(Boolean);
     if (selectedFiles.length === 0) return;
@@ -107,10 +109,12 @@ export const Employees: React.FC<EmployeesProps> = ({
         const newEmp = await api.uploadResume(selectedFiles[0]);
         setEmployees(prev => [newEmp, ...prev]);
         setSelectedId(newEmp.id);
+        setCurrentPage(1); // Reset to first page to see new employee
       } else {
         const result = await api.uploadResumes(selectedFiles);
         setEmployees(prev => [...result.employees, ...prev]);
         if (result.employees[0]) setSelectedId(result.employees[0].id);
+        setCurrentPage(1);
         if (result.failures.length) {
           setUploadError(`${result.failures.length} file(s) failed. ${result.failures[0].error}`);
         }
@@ -130,7 +134,6 @@ export const Employees: React.FC<EmployeesProps> = ({
     e.target.value = '';
   };
 
-  // Re-run AI Learning recommendations
   const handleRegenRecs = async () => {
     if (!selectedEmployee) return;
     setIsUpdatingRecs(true);
@@ -144,7 +147,6 @@ export const Employees: React.FC<EmployeesProps> = ({
     }
   };
 
-  // Re-evaluate Promotion Readiness
   const handleRegenPromotion = async () => {
     if (!selectedEmployee) return;
     setIsUpdatingPromotion(true);
@@ -158,7 +160,6 @@ export const Employees: React.FC<EmployeesProps> = ({
     }
   };
 
-  // Filter logic
   const filteredEmployees = employees.filter(emp => {
     const matchesSearch =
       emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -167,6 +168,14 @@ export const Employees: React.FC<EmployeesProps> = ({
     const matchesDept = selectedDept === 'All' || emp.department === selectedDept;
     return matchesSearch && matchesDept;
   });
+
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const paginatedEmployees = filteredEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedDept]);
 
   const departments = ['All', 'Engineering', 'Data Science', 'Product', 'Design'];
 
@@ -182,28 +191,112 @@ export const Employees: React.FC<EmployeesProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-140px)] overflow-hidden">
       {/* Left panel: Employee list & upload */}
-      <div className="lg:col-span-4 flex flex-col h-full space-y-6 overflow-hidden">
-        {/* Resume Upload Box */}
-        <GlassCard className="p-4 shrink-0">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-outfit font-bold text-sm text-slate-200">Resume Intelligence</h4>
-            <div className="flex gap-1.5">
+      <div className="lg:col-span-4 flex flex-col h-full bg-surface-card border border-border rounded-md shadow-card overflow-hidden">
+        
+        {/* Header and Controls */}
+        <div className="p-4 border-b border-border shrink-0">
+          <div className="flex justify-between items-center mb-3">
+            <h4 className="font-semibold text-sm text-text-primary">Employee Directory</h4>
+            <div className="flex gap-2">
               <button
                 onClick={() => handleExport('csv')}
-                className="px-2 py-1 bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-lg text-[9px] font-bold transition-all"
+                className="px-2 py-1 bg-surface-card hover:bg-surface-sunken text-text-secondary border border-border rounded text-[10px] font-semibold transition-all"
               >
                 CSV
               </button>
               <button
                 onClick={() => handleExport('pdf')}
-                className="px-2 py-1 bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-lg text-[9px] font-bold transition-all"
+                className="px-2 py-1 bg-surface-card hover:bg-surface-sunken text-text-secondary border border-border rounded text-[10px] font-semibold transition-all"
               >
                 PDF
               </button>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500 mb-3">Upload resumes to parse structured JSON and generate candidate profiles automatically</p>
+          
+          <SemanticSearch onSelectEmployee={setSelectedId} />
 
+          <div className="flex space-x-1 overflow-x-auto pb-1 mt-3">
+            {departments.map(dept => (
+              <button
+                key={dept}
+                onClick={() => setSelectedDept(dept)}
+                className={`text-[11px] font-medium px-3 py-1.5 rounded-full border transition-all shrink-0 ${
+                  selectedDept === dept
+                    ? 'bg-brand-tint text-brand border-brand/20'
+                    : 'bg-transparent text-text-secondary border-transparent hover:bg-surface-sunken hover:text-text-primary'
+                }`}
+              >
+                {dept}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable list */}
+        <div className="flex-1 overflow-y-auto">
+          {paginatedEmployees.length > 0 ? (
+            paginatedEmployees.map(emp => {
+              const isSelected = selectedId === emp.id;
+              return (
+                <button
+                  key={emp.id}
+                  onClick={() => setSelectedId(emp.id)}
+                  className={`w-full text-left p-4 border-b border-border transition-all flex items-center justify-between ${
+                    isSelected
+                      ? 'bg-brand-tint border-l-4 border-l-brand border-b-border pl-3' // pl-3 to adjust for border-l-4
+                      : 'bg-surface-card hover:bg-surface-sunken border-l-4 border-l-transparent pl-3'
+                  }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="w-9 h-9 rounded-md bg-surface-sunken border border-border flex items-center justify-center font-bold text-text-secondary text-xs">
+                      {emp.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    <div>
+                      <h5 className={`text-sm font-semibold ${isSelected ? 'text-brand' : 'text-text-primary'}`}>{emp.name}</h5>
+                      <p className="text-[11px] text-text-secondary mt-0.5">{emp.role}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] font-medium text-text-secondary bg-surface-sunken py-1 px-2 border border-border rounded-full">
+                      {emp.department}
+                    </span>
+                    <p className="text-[10px] text-text-muted mt-1.5 font-medium">{emp.experienceYears} yrs exp</p>
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <div className="text-center py-10">
+              <span className="text-sm text-text-muted font-medium">No workforce match found.</span>
+            </div>
+          )}
+        </div>
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="p-3 border-t border-border flex justify-between items-center shrink-0 bg-surface-card">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-sunken rounded disabled:opacity-50"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-[11px] font-medium text-text-secondary">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-sunken rounded disabled:opacity-50"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Resume Upload Box (Bottom) */}
+        <div className="p-4 border-t border-border bg-surface-sunken shrink-0">
           <label
             onDragOver={e => {
               e.preventDefault();
@@ -215,10 +308,10 @@ export const Employees: React.FC<EmployeesProps> = ({
               setIsDraggingResume(false);
               processResumeFiles(e.dataTransfer.files);
             }}
-            className={`border border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+            className={`border border-dashed rounded-md p-4 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 bg-surface-card ${
             isUploading || isDraggingResume
-              ? 'border-blue-500/40 bg-blue-500/5' 
-              : 'border-slate-800 hover:border-blue-500/30 hover:bg-slate-900/30'
+              ? 'border-brand bg-brand-tint' 
+              : 'border-border hover:border-border-strong hover:bg-surface-sunken'
           }`}>
             <input
               type="file"
@@ -229,81 +322,20 @@ export const Employees: React.FC<EmployeesProps> = ({
               disabled={isUploading}
             />
             {isUploading ? (
-              <div className="flex flex-col items-center space-y-2 py-2">
-                <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
-                <span className="text-[10px] font-bold text-blue-400">{uploadStage || 'AI Parsing Resume...'}</span>
-                <div className="h-1.5 w-40 bg-slate-900 rounded-full overflow-hidden">
-                  <div className="h-full w-2/3 bg-blue-500 animate-pulse rounded-full" />
-                </div>
+              <div className="flex flex-col items-center space-y-2 py-1">
+                <RefreshCw className="w-5 h-5 text-brand animate-spin" />
+                <span className="text-[11px] font-medium text-brand">{uploadStage || 'AI Parsing Resume...'}</span>
               </div>
             ) : (
-              <div className="flex flex-col items-center space-y-1.5 py-1">
-                <UploadCloud className="w-6 h-6 text-slate-400 group-hover:text-blue-400" />
-                <span className="text-xs font-semibold text-slate-300">Upload or Drop Resumes</span>
-                <span className="text-[9px] text-slate-600">PDF, DOCX, TXT, ZIP, image resumes | multiple files</span>
+              <div className="flex flex-col items-center space-y-1 py-1 text-center">
+                <UploadCloud className="w-5 h-5 text-text-muted mb-1" />
+                <span className="text-xs font-semibold text-text-primary">Upload Resumes</span>
+                <span className="text-[10px] text-text-secondary">Drag & drop files to generate profiles</span>
               </div>
             )}
           </label>
           {uploadError && (
-            <p className="text-[10px] text-red-400 mt-2 font-medium">{uploadError}</p>
-          )}
-        </GlassCard>
-
-        {/* Filter controls */}
-        <div className="space-y-3 shrink-0 z-40">
-          <SemanticSearch onSelectEmployee={setSelectedId} />
-
-          <div className="flex space-x-1 overflow-x-auto pb-1">
-            {departments.map(dept => (
-              <button
-                key={dept}
-                onClick={() => setSelectedDept(dept)}
-                className={`text-[10px] font-semibold px-3 py-1.5 rounded-lg border transition-all ${
-                  selectedDept === dept
-                    ? 'bg-blue-600/10 text-blue-400 border-blue-500/20'
-                    : 'bg-transparent text-slate-400 border-transparent hover:bg-slate-900/50 hover:text-slate-200'
-                }`}
-              >
-                {dept}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Scrollable list */}
-        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-          {filteredEmployees.length > 0 ? (
-            filteredEmployees.map(emp => (
-              <button
-                key={emp.id}
-                onClick={() => setSelectedId(emp.id)}
-                className={`w-full text-left p-4 rounded-2xl transition-all duration-200 flex items-center justify-between border ${
-                  selectedId === emp.id
-                    ? 'bg-blue-600/10 border-blue-500/25 shadow-[0_0_15px_rgba(59,130,246,0.04)]'
-                    : 'bg-slate-900/20 border-slate-900/40 hover:bg-slate-900/40 hover:border-slate-800/80'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center font-bold text-slate-400 text-xs shadow-inner">
-                    {emp.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-200">{emp.name}</h5>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{emp.role}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-[9px] font-semibold text-slate-400 bg-slate-900/80 py-1 px-2 border border-slate-800/50 rounded-lg">
-                    {emp.department}
-                  </span>
-                  <p className="text-[9px] text-slate-500 mt-1 font-semibold">{emp.experienceYears} yrs exp</p>
-                </div>
-              </button>
-            ))
-          ) : (
-            <div className="text-center py-10 glass-panel rounded-2xl">
-              <span className="text-xs text-slate-500 font-medium">No workforce match found.</span>
-            </div>
+            <p className="text-[11px] text-danger mt-2 font-medium">{uploadError}</p>
           )}
         </div>
       </div>
@@ -315,45 +347,45 @@ export const Employees: React.FC<EmployeesProps> = ({
         ) : selectedEmployee ? (
           <div className="flex-1 overflow-y-auto space-y-6 pr-1 pb-8">
             {/* Header profile summary card */}
-            <GlassCard glow className="bg-gradient-to-br from-slate-950 to-slate-900/50">
+            <GlassCard>
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center space-x-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-base shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                  <div className="w-14 h-14 rounded-md bg-surface-sunken border border-border flex items-center justify-center font-bold text-text-secondary text-xl">
                     {selectedEmployee.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
                     <div className="flex items-center space-x-3">
-                      <h3 className="font-outfit font-extrabold text-xl text-slate-100">{selectedEmployee.name}</h3>
-                      <span className="inline-flex px-2.5 py-0.5 rounded-full bg-blue-500/10 text-[9px] font-bold text-blue-400 uppercase tracking-wide border border-blue-500/10">
+                      <h3 className="font-bold text-xl text-text-primary">{selectedEmployee.name}</h3>
+                      <span className="inline-flex px-2.5 py-0.5 rounded-full bg-surface-sunken text-[10px] font-semibold text-text-secondary uppercase tracking-wide border border-border">
                         {selectedEmployee.department}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1 font-semibold">{selectedEmployee.role}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{selectedEmployee.email}</p>
+                    <p className="text-sm text-text-secondary mt-0.5">{selectedEmployee.role}</p>
+                    <p className="text-xs text-text-muted mt-0.5">{selectedEmployee.email}</p>
                     <div className="flex gap-2 mt-2">
                       {selectedEmployee.github_username ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/10 px-2 py-0.5 rounded font-medium">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-success-tint text-success border border-success/20 px-2 py-0.5 rounded-sm font-medium">
                           <Github className="w-3 h-3" /> @{selectedEmployee.github_username}
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleOpenGitConnect('github')}
-                          className="inline-flex items-center gap-1 text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 px-2 py-0.5 rounded font-bold transition-all"
+                          className="inline-flex items-center gap-1 text-[10px] bg-surface-card hover:bg-surface-sunken text-text-secondary border border-border px-2 py-0.5 rounded-sm font-medium transition-all"
                         >
                           <Github className="w-3 h-3" /> Connect GitHub
                         </button>
                       )}
 
                       {selectedEmployee.gitlab_username ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/10 px-2 py-0.5 rounded font-medium">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-success-tint text-success border border-success/20 px-2 py-0.5 rounded-sm font-medium">
                           <Gitlab className="w-3 h-3" /> @{selectedEmployee.gitlab_username}
                         </span>
                       ) : (
                         <button
                           type="button"
                           onClick={() => handleOpenGitConnect('gitlab')}
-                          className="inline-flex items-center gap-1 text-[9px] bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 px-2 py-0.5 rounded font-bold transition-all"
+                          className="inline-flex items-center gap-1 text-[10px] bg-surface-card hover:bg-surface-sunken text-text-secondary border border-border px-2 py-0.5 rounded-sm font-medium transition-all"
                         >
                           <Gitlab className="w-3 h-3" /> Connect GitLab
                         </button>
@@ -362,30 +394,30 @@ export const Employees: React.FC<EmployeesProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-6 bg-slate-900/40 border border-slate-900 p-3 rounded-xl">
+                <div className="flex items-center space-x-6 bg-surface-sunken border border-border p-3 rounded-md">
                   <div className="text-center">
-                    <span className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Experience</span>
-                    <span className="text-sm font-black text-slate-200 mt-0.5 block">{selectedEmployee.experienceYears} yrs</span>
+                    <span className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider">Experience</span>
+                    <span className="text-sm font-mono font-bold text-text-primary mt-0.5 block">{selectedEmployee.experienceYears} yrs</span>
                   </div>
-                  <div className="h-6 w-px bg-slate-800" />
+                  <div className="h-6 w-px bg-border" />
                   <div className="text-center">
-                    <span className="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider">Performance</span>
-                    <span className="text-sm font-black text-slate-200 mt-0.5 block">{selectedEmployee.performanceRating} / 5.0</span>
+                    <span className="block text-[10px] font-semibold text-text-secondary uppercase tracking-wider">Performance</span>
+                    <span className="text-sm font-mono font-bold text-text-primary mt-0.5 block">{selectedEmployee.performanceRating} / 5.0</span>
                   </div>
                 </div>
               </div>
 
               {/* Bio Profile summary */}
-              <div className="mt-5 pt-5 border-t border-slate-900 flex justify-between items-end gap-4">
+              <div className="mt-5 pt-5 border-t border-border flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                 <div className="flex-1">
-                  <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">AI Profile Insights</h5>
-                  <p className="text-xs text-slate-300 leading-relaxed italic">
-                    "{selectedEmployee.profileSummary}"
+                  <h5 className="text-[11px] font-bold text-text-secondary uppercase tracking-wider mb-2">AI Profile Insights</h5>
+                  <p className="text-sm text-text-primary leading-relaxed">
+                    {selectedEmployee.profileSummary}
                   </p>
                 </div>
                 <button
                   onClick={() => setShowSimulator(true)}
-                  className="shrink-0 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/30 text-blue-400 font-bold text-xs rounded-xl transition-colors flex items-center gap-2"
+                  className="shrink-0 px-4 py-2 bg-ai-tint hover:bg-ai-tint/80 border border-ai-accent/20 text-ai-accent font-semibold text-xs rounded-md transition-colors flex items-center gap-2"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   AI Career Simulator
@@ -404,27 +436,27 @@ export const Employees: React.FC<EmployeesProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Technical skills */}
               <GlassCard>
-                <h4 className="font-outfit font-bold text-sm text-slate-200 mb-4 flex items-center space-x-2">
-                  <Briefcase className="w-4 h-4 text-blue-400" />
+                <h4 className="font-semibold text-sm text-text-primary mb-4 flex items-center space-x-2">
+                  <Briefcase className="w-4 h-4 text-brand" />
                   <span>Technical Expertise Mapping</span>
                 </h4>
                 <div className="space-y-3.5">
                   {selectedEmployee.technicalSkills.map((skill, index) => (
                     <div key={index} className="space-y-1.5">
                       <div className="flex justify-between text-xs font-medium">
-                        <span className="text-slate-300 flex items-center gap-1.5">
+                        <span className="text-text-primary flex items-center gap-1.5">
                           {skill.name}
                           {skill.source === 'github_verified' && (
-                            <span className="inline-flex items-center text-emerald-400 animate-pulse" title="GitHub Verified Skill">
-                              <BadgeCheck className="w-3.5 h-3.5" />
+                            <span className="inline-flex items-center text-[9px] bg-success-tint text-success px-1.5 py-0.5 rounded border border-success/20" title="GitHub Verified Skill">
+                              <BadgeCheck className="w-3 h-3 mr-1" /> Verified
                             </span>
                           )}
                         </span>
-                        <span className="text-blue-400 font-bold">{skill.proficiency} / 5</span>
+                        <span className="font-mono font-bold text-text-secondary">{skill.proficiency} / 5</span>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-900 rounded-full overflow-hidden border border-slate-800/40">
+                      <div className="h-1.5 w-full bg-surface-sunken rounded-full overflow-hidden border border-border">
                         <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-300"
+                          className="h-full bg-brand rounded-full"
                           style={{ width: `${(skill.proficiency / 5) * 100}%` }}
                         />
                       </div>
@@ -437,15 +469,15 @@ export const Employees: React.FC<EmployeesProps> = ({
               <div className="space-y-6">
                 {/* Soft Skills */}
                 <GlassCard>
-                  <h4 className="font-outfit font-bold text-sm text-slate-200 mb-3.5 flex items-center space-x-2">
-                    <Compass className="w-4 h-4 text-indigo-400" />
+                  <h4 className="font-semibold text-sm text-text-primary mb-3.5 flex items-center space-x-2">
+                    <Compass className="w-4 h-4 text-brand" />
                     <span>Behavioral Competencies</span>
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedEmployee.softSkills.map((skill, index) => (
                       <span
                         key={index}
-                        className="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-lg hover:border-indigo-500/20 hover:text-slate-300 transition-colors"
+                        className="text-[11px] font-medium px-2.5 py-1 bg-surface-sunken border border-border text-text-secondary rounded-md"
                       >
                         {skill}
                       </span>
@@ -455,19 +487,19 @@ export const Employees: React.FC<EmployeesProps> = ({
 
                 {/* Certifications & Projects */}
                 <GlassCard>
-                  <h4 className="font-outfit font-bold text-sm text-slate-200 mb-3 flex items-center space-x-2">
-                    <Award className="w-4 h-4 text-emerald-400" />
+                  <h4 className="font-semibold text-sm text-text-primary mb-3 flex items-center space-x-2">
+                    <Award className="w-4 h-4 text-brand" />
                     <span>Certifications & active workloads</span>
                   </h4>
                   <div className="space-y-4">
                     {selectedEmployee.certifications.length > 0 && (
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Accreditations</span>
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-wide">Accreditations</span>
                         <div className="flex flex-wrap gap-2">
                           {selectedEmployee.certifications.map((cert, index) => (
                             <span
                               key={index}
-                              className="text-[10px] font-medium px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/10 text-emerald-400 rounded"
+                              className="text-[11px] font-medium px-2 py-1 bg-success-tint border border-success/20 text-success rounded-sm"
                             >
                               {cert}
                             </span>
@@ -476,20 +508,20 @@ export const Employees: React.FC<EmployeesProps> = ({
                       </div>
                     )}
 
-                    <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Assigned Workstreams</span>
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-semibold text-text-secondary uppercase tracking-wide">Assigned Workstreams</span>
                       <div className="flex flex-wrap gap-2">
                         {selectedEmployee.currentProjects.length > 0 ? (
                           selectedEmployee.currentProjects.map((proj, index) => (
                             <span
                               key={index}
-                              className="text-[10px] font-medium px-2 py-0.5 bg-slate-900 text-slate-300 border border-slate-800 rounded"
+                              className="text-[11px] font-medium px-2 py-1 bg-surface-sunken text-text-secondary border border-border rounded-sm"
                             >
                               {proj}
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-slate-600">Unassigned (Available)</span>
+                          <span className="text-[11px] text-text-muted">Unassigned (Available)</span>
                         )}
                       </div>
                     </div>
@@ -501,14 +533,17 @@ export const Employees: React.FC<EmployeesProps> = ({
             {/* Row 3: AI Career Roadmap (Learning recommendations) */}
             <GlassCard>
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-outfit font-bold text-sm text-slate-200 flex items-center space-x-2">
-                  <BookOpen className="w-4.5 h-4.5 text-blue-400" />
+                <h4 className="font-semibold text-sm text-text-primary flex items-center gap-1.5">
+                  <BookOpen className="w-4 h-4 text-ai-accent" />
                   <span>AI Upskilling Recommendation & Roadmap</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-ai-tint text-ai-accent text-[9px] font-bold uppercase tracking-wider border border-ai-accent/20 flex items-center gap-1 ml-2">
+                    <Sparkles className="w-3 h-3" /> AI Suggested
+                  </span>
                 </h4>
                 <button
                   onClick={handleRegenRecs}
                   disabled={isUpdatingRecs}
-                  className="text-[10px] font-bold text-slate-400 hover:text-blue-400 flex items-center space-x-1 bg-slate-900 border border-slate-800 py-1 px-2 rounded-lg transition-colors disabled:opacity-50"
+                  className="text-xs font-semibold text-text-secondary hover:text-ai-accent flex items-center space-x-1 py-1 px-2 border border-border rounded-md hover:bg-surface-sunken transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3 h-3 ${isUpdatingRecs ? 'animate-spin' : ''}`} />
                   <span>Regenerate</span>
@@ -520,36 +555,30 @@ export const Employees: React.FC<EmployeesProps> = ({
                   {selectedEmployee.learningRecommendations.map((rec, index) => (
                     <div
                       key={index}
-                      className="p-4 bg-slate-900/30 border border-slate-900 hover:border-slate-800/80 rounded-xl space-y-3 flex flex-col justify-between"
+                      className="p-4 bg-surface-card border border-border rounded-md space-y-3 flex flex-col justify-between"
                     >
                       <div className="space-y-2">
                         <div className="flex items-start justify-between">
-                          <h5 className="text-xs font-bold text-slate-200 leading-snug">{rec.courseName}</h5>
-                          <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded shrink-0 ml-2 ${
-                            rec.type === 'certification'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10'
-                              : rec.type === 'project'
-                              ? 'bg-violet-500/10 text-violet-400 border border-violet-500/10'
-                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/10'
-                          }`}>
+                          <h5 className="text-sm font-semibold text-text-primary leading-snug">{rec.courseName}</h5>
+                          <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded shrink-0 ml-2 bg-surface-sunken text-text-secondary border border-border">
                             {rec.type}
                           </span>
                         </div>
-                        <p className="text-[10px] text-slate-500 leading-relaxed">{rec.description}</p>
+                        <p className="text-xs text-text-secondary leading-relaxed">{rec.description}</p>
                       </div>
 
-                      <div className="pt-2.5 border-t border-slate-900/50 space-y-2">
-                        <div className="flex items-center text-[10px] text-slate-400">
-                          <Calendar className="w-3.5 h-3.5 mr-1 text-slate-500" />
-                          <span>Timeline: **{rec.timeline}**</span>
+                      <div className="pt-3 border-t border-border space-y-3">
+                        <div className="flex items-center text-xs text-text-secondary">
+                          <Calendar className="w-4 h-4 mr-1.5 text-text-muted" />
+                          <span>Timeline: <strong className="font-medium text-text-primary">{rec.timeline}</strong></span>
                         </div>
-                        <div className="space-y-1">
-                          <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wide">Roadmap Path</span>
-                          <ul className="space-y-1 text-[9px] text-slate-400">
+                        <div className="space-y-1.5">
+                          <span className="text-[10px] font-semibold text-text-muted uppercase tracking-wide">Roadmap Path</span>
+                          <ul className="space-y-1.5 text-xs text-text-secondary">
                             {rec.roadmap.map((step, idx) => (
-                              <li key={idx} className="flex items-center space-x-1.5">
-                                <ChevronRight className="w-3 h-3 text-blue-500 shrink-0" />
-                                <span className="truncate">{step}</span>
+                              <li key={idx} className="flex items-start space-x-2">
+                                <ChevronRight className="w-4 h-4 text-brand shrink-0" />
+                                <span className="leading-snug">{step}</span>
                               </li>
                             ))}
                           </ul>
@@ -559,23 +588,26 @@ export const Employees: React.FC<EmployeesProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-xs text-slate-500">
+                <div className="text-center py-6 text-sm text-text-muted">
                   Click regenerate to run AI and draft a custom career training roadmap.
                 </div>
               )}
             </GlassCard>
 
             {/* Row 4: AI Promotion Readiness Evaluation */}
-            <GlassCard glow className="border-indigo-500/10 bg-gradient-to-r from-indigo-950/10 to-slate-950">
+            <GlassCard className="border-t-4 border-t-ai-accent">
               <div className="flex items-center justify-between mb-4">
-                <h4 className="font-outfit font-bold text-sm text-slate-200 flex items-center space-x-2">
-                  <Sparkles className="w-4.5 h-4.5 text-indigo-400 animate-pulse" />
+                <h4 className="font-semibold text-sm text-text-primary flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-ai-accent" />
                   <span>AI Promotion Readiness Index</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-ai-tint text-ai-accent text-[9px] font-bold uppercase tracking-wider border border-ai-accent/20 flex items-center gap-1 ml-2">
+                    <Sparkles className="w-3 h-3" /> AI Suggested
+                  </span>
                 </h4>
                 <button
                   onClick={handleRegenPromotion}
                   disabled={isUpdatingPromotion}
-                  className="text-[10px] font-bold text-slate-400 hover:text-indigo-400 flex items-center space-x-1 bg-slate-900 border border-slate-800 py-1 px-2 rounded-lg transition-colors disabled:opacity-50"
+                  className="text-xs font-semibold text-text-secondary hover:text-ai-accent flex items-center space-x-1 py-1 px-2 border border-border hover:bg-surface-sunken rounded-md transition-colors disabled:opacity-50"
                 >
                   <RefreshCw className={`w-3 h-3 ${isUpdatingPromotion ? 'animate-spin' : ''}`} />
                   <span>Regenerate</span>
@@ -585,59 +617,53 @@ export const Employees: React.FC<EmployeesProps> = ({
               {selectedEmployee.promotionEvaluation ? (
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Gauge */}
-                  <div className="md:w-1/3 flex flex-col items-center justify-center p-4 bg-slate-900/35 border border-slate-900/60 rounded-xl relative overflow-hidden">
-                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider mb-2">Readiness Score</span>
-                    <div className="relative w-24 h-24 flex items-center justify-center">
+                  <div className="md:w-1/3 flex flex-col items-center justify-center p-6 bg-surface-sunken border border-border rounded-md relative overflow-hidden">
+                    <span className="text-[11px] font-semibold uppercase text-text-secondary tracking-wider mb-4">Readiness Score</span>
+                    <div className="relative w-32 h-32 flex items-center justify-center">
                       {/* Circle track */}
                       <svg className="w-full h-full transform -rotate-90">
                         <circle
-                          cx="48"
-                          cy="48"
-                          r="40"
-                          stroke="#1e293b"
-                          strokeWidth="8"
+                          cx="64"
+                          cy="64"
+                          r="54"
+                          stroke="var(--border)"
+                          strokeWidth="10"
                           fill="transparent"
                         />
                         <circle
-                          cx="48"
-                          cy="48"
-                          r="40"
-                          stroke="url(#indigoGrad)"
-                          strokeWidth="8"
+                          cx="64"
+                          cy="64"
+                          r="54"
+                          stroke="var(--ai-accent)"
+                          strokeWidth="10"
                           fill="transparent"
-                          strokeDasharray={2 * Math.PI * 40}
-                          strokeDashoffset={2 * Math.PI * 40 * (1 - selectedEmployee.promotionEvaluation.promotionScore / 100)}
+                          strokeDasharray={2 * Math.PI * 54}
+                          strokeDashoffset={2 * Math.PI * 54 * (1 - selectedEmployee.promotionEvaluation.promotionScore / 100)}
                           strokeLinecap="round"
                         />
-                        <defs>
-                          <linearGradient id="indigoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#6366f1" />
-                            <stop offset="100%" stopColor="#4f46e5" />
-                          </linearGradient>
-                        </defs>
                       </svg>
                       <div className="absolute flex flex-col items-center">
-                        <span className="text-xl font-black text-white">{selectedEmployee.promotionEvaluation.promotionScore}%</span>
+                        <span className="text-3xl font-mono font-bold text-text-primary">{selectedEmployee.promotionEvaluation.promotionScore}%</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Evaluation Text & Improvement recommendations */}
-                  <div className="md:w-2/3 space-y-4">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wide">Analysis & Reasoning</span>
-                      <p className="text-xs text-slate-300 leading-relaxed">
+                  <div className="md:w-2/3 space-y-5">
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">Analysis & Reasoning</span>
+                      <p className="text-sm text-text-primary leading-relaxed">
                         {selectedEmployee.promotionEvaluation.reasoning}
                       </p>
                     </div>
 
                     {selectedEmployee.promotionEvaluation.areasToImprove.length > 0 && (
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Identified Growth Areas</span>
-                        <ul className="space-y-1 text-xs text-slate-400">
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">Identified Growth Areas</span>
+                        <ul className="space-y-1.5 text-sm text-text-primary">
                           {selectedEmployee.promotionEvaluation.areasToImprove.map((area, idx) => (
                             <li key={idx} className="flex items-start space-x-2">
-                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 shrink-0 mt-1.5" />
+                              <span className="h-1.5 w-1.5 rounded-full bg-brand shrink-0 mt-2" />
                               <span>{area}</span>
                             </li>
                           ))}
@@ -647,15 +673,15 @@ export const Employees: React.FC<EmployeesProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-6 text-xs text-slate-500">
+                <div className="text-center py-6 text-sm text-text-muted">
                   Click regenerate to trigger AI promotion readiness metrics.
                 </div>
               )}
             </GlassCard>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center glass-panel rounded-2xl">
-            <span className="text-slate-500 text-sm">Select an employee to open their profile.</span>
+          <div className="flex-1 flex items-center justify-center bg-surface-card border border-border rounded-md shadow-card">
+            <span className="text-text-muted text-sm font-medium">Select an employee to open their profile.</span>
           </div>
         )}
       </div>

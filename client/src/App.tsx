@@ -13,12 +13,13 @@ import { Projects } from './pages/Projects';
 import { Recruitment } from './pages/Recruitment';
 import { AuditLogs } from './pages/AuditLogs';
 import { Settings } from './pages/Settings';
+import { CommandCenter } from './pages/CommandCenter';
 import { api, Employee, Project, DashboardStats, SkillGapReport } from './utils/api';
 import { SkeletonTable } from './components/LoadingSkeleton';
 
 function AppContent() {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('command-center');
   
   // App Core Data State
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -93,6 +94,8 @@ function AppContent() {
     }
 
     switch (activeTab) {
+      case 'command-center':
+        return <CommandCenter />;
       case 'dashboard':
         return stats ? <Dashboard stats={stats} setActiveTab={setActiveTab} /> : null;
       case 'employees':

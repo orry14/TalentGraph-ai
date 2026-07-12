@@ -1,22 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   LayoutDashboard,
   Users,
   Briefcase,
   TrendingUp,
-  GitMerge,
-  Sparkles,
-  Database,
   FolderGit,
   UserSearch,
   ShieldAlert,
   Settings as SettingsIcon,
-  LogOut,
-  Network
+  Network,
+  MonitorPlay,
+  Database,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { useRole, AppRole } from '../context/RoleContext';
 import { RequireRole } from './RequireRole';
+import { clsx } from 'clsx';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,8 +39,10 @@ export const Layout: React.FC<LayoutProps> = ({
 }) => {
   const { user } = useAuth();
   const { role, setRole } = useRole();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const navigation = [
+    { id: 'command-center', name: 'Command Center', icon: MonitorPlay, roles: ['admin', 'manager', 'employee'] as AppRole[] },
     { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'manager', 'employee'] as AppRole[] },
     { id: 'employees', name: 'Employee Workspace', icon: Users, roles: ['admin', 'manager', 'employee'] as AppRole[] },
     { id: 'recruitment', name: 'Recruitment', icon: UserSearch, roles: ['admin', 'manager'] as AppRole[] },
@@ -51,25 +55,29 @@ export const Layout: React.FC<LayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 flex relative overflow-hidden bg-grid-pattern">
-      {/* Decorative gradient blobs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-violet-600/10 rounded-full blur-[120px] pointer-events-none" />
-
+    <div className="min-h-screen bg-surface-page flex relative overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-72 border-r border-slate-900 bg-slate-950/80 backdrop-blur-xl flex flex-col z-30 shrink-0">
-        <div className="p-6 border-b border-slate-900/60 flex items-center space-x-3">
-          <div className="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-outfit font-bold text-xl tracking-tight text-white">TalentGraph</h1>
-            <span className="text-[10px] text-blue-400 font-semibold tracking-wider uppercase">Workforce Intelligence</span>
+      <aside 
+        className={clsx(
+          "bg-surface-sidebar border-r border-border flex flex-col z-30 shrink-0 transition-all duration-300",
+          isCollapsed ? "w-20" : "w-72"
+        )}
+      >
+        <div className="h-16 border-b border-border flex items-center px-4 shrink-0 overflow-hidden">
+          <div className="flex items-center space-x-3 w-full">
+            <div className="p-2 shrink-0">
+              <Sparkles className="w-6 h-6 text-brand" />
+            </div>
+            {!isCollapsed && (
+              <div className="min-w-0">
+                <h1 className="font-bold text-lg text-text-primary truncate">TalentGraph</h1>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
           {navigation.map(item => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -77,14 +85,19 @@ export const Layout: React.FC<LayoutProps> = ({
               <RequireRole key={item.id} roles={item.roles}>
                 <button
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  title={isCollapsed ? item.name : undefined}
+                  className={clsx(
+                    "w-full flex items-center px-3 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 relative group",
                     isActive
-                      ? 'bg-blue-600/15 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.05)]'
-                      : 'text-slate-400 hover:bg-slate-900/50 hover:text-slate-200 border border-transparent'
-                  }`}
+                      ? "bg-brand-tint text-brand"
+                      : "text-text-secondary hover:bg-surface-sunken hover:text-text-primary"
+                  )}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-blue-400' : 'text-slate-400'}`} />
-                  <span>{item.name}</span>
+                  {isActive && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-brand rounded-r-full" />
+                  )}
+                  <Icon className={clsx("w-5 h-5 shrink-0", isActive ? "text-brand" : "text-text-muted group-hover:text-text-primary")} />
+                  {!isCollapsed && <span className="ml-3 truncate">{item.name}</span>}
                 </button>
               </RequireRole>
             );
@@ -93,55 +106,61 @@ export const Layout: React.FC<LayoutProps> = ({
 
         {/* Database reset helper */}
         <RequireRole roles={['admin']}>
-          <div className="px-6 py-3 border-t border-slate-900/60">
+          <div className="px-4 py-3 border-t border-border">
             <button
               onClick={onResetDB}
               disabled={resetLoading}
-              className="w-full flex items-center justify-center space-x-2 text-xs py-2 bg-slate-900/50 hover:bg-slate-900 text-slate-400 hover:text-slate-300 border border-slate-800/80 rounded-lg transition-all duration-200 disabled:opacity-50"
+              title={isCollapsed ? 'Reset Seed Database' : undefined}
+              className="w-full flex items-center justify-center space-x-2 text-xs py-2 bg-surface-sunken hover:bg-border text-text-secondary hover:text-text-primary border border-border rounded-md transition-all duration-200 disabled:opacity-50"
             >
-              <Database className="w-3.5 h-3.5" />
-              <span>{resetLoading ? 'Resetting...' : 'Reset Seed Database'}</span>
+              <Database className="w-4 h-4 shrink-0" />
+              {!isCollapsed && <span>{resetLoading ? 'Resetting...' : 'Reset DB'}</span>}
             </button>
           </div>
         </RequireRole>
 
-        {/* Footer profile info */}
-        <div className="p-4 border-t border-slate-900/60 bg-slate-950/40">
-          <div className="flex items-center justify-between p-2 rounded-xl bg-slate-900/30 border border-slate-900/50 mb-3">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-sm uppercase shadow-inner">
-                {user?.name.slice(0, 2) || 'US'}
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-slate-200 leading-tight">{user?.name || 'Mock User'}</p>
-                <div className="flex items-center space-x-1 mt-1">
-                  <ShieldAlert className="w-3 h-3 text-emerald-400" />
-                  <p className="text-[10px] text-emerald-400 font-medium leading-none uppercase">{role}</p>
+        {/* Footer profile info & Collapse Toggle */}
+        <div className="p-4 border-t border-border bg-surface-sidebar">
+          {!isCollapsed && (
+            <>
+              <div className="flex items-center space-x-2.5 mb-3">
+                <div className="w-9 h-9 rounded-md bg-surface-sunken border border-border flex items-center justify-center font-bold text-text-primary text-sm uppercase shrink-0">
+                  {user?.name.slice(0, 2) || 'US'}
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-sm font-medium text-text-primary truncate">{user?.name || 'Mock User'}</p>
+                  <p className="text-[11px] text-text-muted font-medium uppercase truncate">{role}</p>
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="px-2 pb-1">
-            <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1 block">Mock Role (Ideation)</label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as AppRole)}
-              className="w-full bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300 py-1.5 px-2 focus:outline-none focus:border-blue-500"
-            >
-              <option value="admin">Admin</option>
-              <option value="manager">Manager</option>
-              <option value="employee">Employee</option>
-            </select>
-          </div>
+              <div className="mb-4">
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value as AppRole)}
+                  className="w-full bg-surface-sunken border border-border rounded-md text-xs text-text-primary py-1.5 px-2 focus:outline-none focus:border-brand"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="manager">Manager</option>
+                  <option value="employee">Employee</option>
+                </select>
+              </div>
+            </>
+          )}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="w-full flex items-center justify-center py-2 text-text-muted hover:text-text-primary hover:bg-surface-sunken rounded-md transition-colors"
+            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </button>
         </div>
       </aside>
 
       {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden bg-surface-page">
         {/* Top Navbar */}
-        <header className="h-16 border-b border-slate-900/60 bg-slate-950/40 backdrop-blur-xl flex items-center justify-between px-8 z-20 shrink-0">
+        <header className="h-16 border-b border-border bg-surface-card flex items-center justify-between px-8 z-20 shrink-0">
           <div>
-            <h2 className="font-outfit font-semibold text-lg text-slate-200">
+            <h2 className="font-semibold text-lg text-text-primary">
               {navigation.find(n => n.id === activeTab)?.name}
             </h2>
           </div>
@@ -149,16 +168,16 @@ export const Layout: React.FC<LayoutProps> = ({
           {/* Org score badge */}
           <div className="flex items-center space-x-6">
             {orgCapabilityScore !== null && (
-              <div className="flex items-center space-x-2.5 py-1.5 px-3 bg-slate-900/80 border border-slate-800 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.05)]">
-                <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Org Capability Index</span>
-                <div className="h-4 w-px bg-slate-800" />
-                <span className="font-outfit font-extrabold text-sm text-blue-400 animate-pulse">
+              <div className="flex items-center space-x-2.5 py-1 px-3 bg-surface-sunken border border-border rounded-full">
+                <span className="text-[11px] font-medium text-text-secondary">Org Capability</span>
+                <div className="h-4 w-px bg-border" />
+                <span className="font-mono font-bold text-sm text-text-primary">
                   {orgCapabilityScore}%
                 </span>
               </div>
             )}
-            <div className="text-xs font-medium text-slate-500 flex items-center space-x-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="text-xs font-medium text-text-muted flex items-center space-x-2">
+              <span className="h-2 w-2 rounded-full bg-success animate-[pulse_2s_ease-in-out_infinite]" />
               <span>Platform Core Online</span>
             </div>
           </div>

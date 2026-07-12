@@ -1,4 +1,6 @@
 import express from 'express';
+import { createServer } from 'http';
+import { initSocket, socketService } from './services/socketService.js';
 // Trigger reload comment
 import cors from 'cors';
 import multer from 'multer';
@@ -751,6 +753,8 @@ app.post('/api/projects/:id/members', async (req, res) => {
       targetId: member.projectId,
       metadata: { memberId: saved.id, employeeId: saved.employeeId, projectRole: saved.role }
     });
+    
+    socketService.broadcastStaffingChange({ type: 'add', employeeId: saved.employeeId, projectId: saved.projectId, details: saved });
 
     res.status(200).json(saved);
   } catch (err: any) {
@@ -770,6 +774,8 @@ app.delete('/api/projects/:id/members/:memberId', async (req, res) => {
       targetId: req.params.id,
       metadata: { memberId: req.params.memberId, success: deleted }
     });
+    
+    socketService.broadcastStaffingChange({ type: 'remove', employeeId: req.params.memberId, projectId: req.params.id, details: { deleted } });
 
     res.status(200).json({ success: deleted });
   } catch (err: any) {
@@ -1628,10 +1634,22 @@ app.post('/api/graph/sync', requireRole('admin'), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.post('/api/simulate-event', requireRole('admin'), async (req, res) => {
+  try {
+    const { eventType, payload, message } = req.body;
+    socketService.broadcastSimulation({ message, payload });
+    res.json({ success: true, message: 'Simulation event broadcasted.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+const httpServer = createServer(app);
+initSocket(httpServer);
 
 // Start listening if not running on Vercel
 if (process.env.VERCEL !== '1') {
-  app.listen(PORT, async () => {
+  httpServer.listen(PORT, async () => {
     console.log(`🚀 Workforce Intelligence Platform Server running on http://localhost:${PORT}`);
     initScheduler();
     // Initialize Neo4j and do initial graph sync
