@@ -1713,11 +1713,12 @@ app.post('/api/simulate-event', requireRole('admin'), async (req, res) => {
   }
 });
 
-const httpServer = createServer(app);
-initSocket(httpServer);
 
 // Start listening if not running on Vercel
 if (process.env.VERCEL !== '1') {
+  const httpServer = createServer(app);
+  initSocket(httpServer);
+
   httpServer.listen(PORT, async () => {
     console.log(`🚀 Workforce Intelligence Platform Server running on http://localhost:${PORT}`);
     initScheduler();
@@ -1734,8 +1735,8 @@ if (process.env.VERCEL !== '1') {
     }
   });
 } else {
-  initScheduler();
-  initNeo4j();
+  // Do not initialize background tasks or persistent DB connections on Vercel serverless
+  console.log('Running on Vercel serverless environment');
 }
 
 export default app;
