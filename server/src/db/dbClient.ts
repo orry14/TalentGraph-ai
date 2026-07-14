@@ -55,13 +55,20 @@ export interface MarketSkill {
   lastUpdated: string;
 }
 
-// Setup __dirname equivalent in ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Path for the local JSON database file
-const DATA_DIR = path.join(__dirname, '..', '..', 'data');
-const DB_FILE_PATH = path.join(DATA_DIR, 'db.json');
+// Setup __dirname equivalent safely for CJS/ESM bundlers
+let DATA_DIR = '';
+let DB_FILE_PATH = '';
+try {
+  // @ts-ignore
+  const _filename = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url);
+  // @ts-ignore
+  const _dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(_filename);
+  DATA_DIR = path.join(_dirname, '..', '..', 'data');
+  DB_FILE_PATH = path.join(DATA_DIR, 'db.json');
+} catch (e) {
+  DATA_DIR = path.join(process.cwd(), 'data');
+  DB_FILE_PATH = path.join(DATA_DIR, 'db.json');
+}
 
 // Interface for database structure
 interface Schema {
