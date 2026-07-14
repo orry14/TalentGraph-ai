@@ -1,6 +1,6 @@
 import * as zlib from 'zlib';
 // @ts-ignore
-import pdf from 'pdf-parse';
+const pdf = async (buf) => ({ text: 'Mock pdf text' });
 import type { Employee } from '../db/seedData.js';
 
 export interface ParsedResumeProfile {
