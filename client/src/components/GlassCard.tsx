@@ -19,14 +19,14 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     <div
       className={twMerge(
         clsx(
-          'bg-surface-card border border-border rounded-md shadow-card p-6 transition-all duration-300 relative',
-          hoverGlow && 'hover:border-border-strong hover:shadow-md'
+          'bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[12px] p-6 shadow-xs transition-all duration-150',
+          hoverGlow && 'hover:shadow-sm'
         ),
         className
       )}
       {...props}
     >
-      <div className="relative z-10">{children}</div>
+      {children}
     </div>
   );
 };

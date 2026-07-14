@@ -1,0 +1,19 @@
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.cmdk-item[data-selected="true"] {
+  background-color: var(--bg-surface-alt);
+  color: var(--text-primary);
+}
+
+.cmdk-item:active {
+  background-color: var(--border-default);
+}

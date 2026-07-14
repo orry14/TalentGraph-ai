@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { GlassCard } from '../components/GlassCard';
 import { SkeletonTable } from '../components/LoadingSkeleton';
-import { api, Project, Employee } from '../utils/api';
+import { api, Project, Employee, API_BASE } from '../utils/api';
 import {
   FolderGit,
   Plus,
@@ -79,6 +79,8 @@ export const Projects: React.FC = () => {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formProject, setFormProject] = useState<Partial<Project>>({});
   const [activeTab, setActiveTab] = useState<'overview' | 'health' | 'team' | 'timeline' | 'budget' | 'skills' | 'documents' | 'risks' | 'insights'>('overview');
+  
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
 
   // Sub-resource Modal / Add forms
   const [newMember, setNewMember] = useState({ employeeId: '', role: 'Backend' as any, allocation: 100 });
@@ -348,6 +350,72 @@ export const Projects: React.FC = () => {
     }
   };
 
+  const handleAutoAssignAI = async () => {
+    if (!selectedProject) return;
+    setIsAutoAssigning(true);
+    try {
+      const reqSkills = selectedProject.project.requiredSkills || [];
+      const prompt = `Based on the skills required for the project "${selectedProject.project.name}" (Required Skills: ${reqSkills.join(', ')}), suggest the 2 optimal team members from the workforce to assign. Return the exact JSON action block of type "assign_team" containing the projectId "${selectedProject.project.id}" and the array of members with employeeId, role, and allocation. Do not output anything else but the JSON inside a markdown action block.`;
+      
+      const res = await fetch(`${API_BASE}/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await res.json();
+      
+      const actionMatch = data.response.match(/```(?:action)?\s*(\{[\s\S]*?\})\s*```/);
+      let actionStr = data.response;
+      if (actionMatch) {
+         actionStr = actionMatch[1];
+      }
+      
+      const action = JSON.parse(actionStr);
+      if (action.type === 'assign_team' && action.members) {
+        let assignedCount = 0;
+        for (const newM of action.members) {
+          const emp = employees.find(e => e.id === newM.employeeId || e.name === newM.employeeId);
+          if (!emp) continue;
+          
+          if (!selectedProject.members.some((existing: any) => existing.employeeId === emp.id)) {
+            // calculate match
+            const empSkills = emp.technicalSkills.map((s: any) => s.name.toLowerCase());
+            const matches = reqSkills.filter((s: string) => empSkills.includes(s.toLowerCase())).length;
+            const skillMatch = reqSkills.length > 0 ? Math.round((matches / reqSkills.length) * 100) : 100;
+            
+            await api.addProjectMember(selectedProject.project.id, {
+              ...newM,
+              employeeId: emp.id,
+              skillMatch,
+              performance: emp.performanceRating,
+              availability: newM.allocation > 100 ? 'Overallocated' : 'Available'
+            });
+            await api.addProjectActivity(selectedProject.project.id, {
+              description: `AI assigned member ${emp.name} to the team as ${newM.role}`,
+              userId: 'AI Copilot'
+            });
+            assignedCount++;
+          }
+        }
+        if (assignedCount > 0) {
+          alert(`AI successfully auto-assigned ${assignedCount} new members to the project!`);
+          handleSelectProject(selectedProject.project.id);
+        } else {
+          alert(`AI suggested members who are already assigned to the project or not found.`);
+        }
+      } else {
+        throw new Error('Invalid AI response block');
+      }
+    } catch (err: any) {
+      alert("AI Auto-assign failed: " + err.message);
+      console.error(err);
+    } finally {
+      setIsAutoAssigning(false);
+    }
+  };
+
   const handleRemoveMember = async (memberId: string, name: string) => {
     if (!selectedProject || !window.confirm(`Remove ${name} from project assignments?`)) return;
     try {
@@ -480,18 +548,18 @@ export const Projects: React.FC = () => {
   // Circular progress helper for health score
   const getHealthColorClass = (score: number) => {
     if (score >= 90) return 'text-emerald-500 border-emerald-500/20';
-    if (score >= 75) return 'text-brand border-brand/20';
+    if (score >= 75) return 'text-[var(--accent)] border-[var(--accent)]/20';
     if (score >= 60) return 'text-yellow-500 border-yellow-500/20';
-    if (score >= 40) return 'text-danger border-danger/20';
-    return 'text-danger border-danger/20';
+    if (score >= 40) return 'text-[var(--red)] border-[var(--red)]/20';
+    return 'text-[var(--red)] border-[var(--red)]/20';
   };
 
   const getHealthBGClass = (score: number) => {
     if (score >= 90) return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-    if (score >= 75) return 'bg-brand-tint text-brand border-brand/20';
+    if (score >= 75) return 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/20';
     if (score >= 60) return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    if (score >= 40) return 'bg-danger-tint text-danger border-danger/20';
-    return 'bg-danger-tint text-danger border-danger/20';
+    if (score >= 40) return 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20';
+    return 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20';
   };
 
   // Recharts calculations
@@ -538,52 +606,52 @@ export const Projects: React.FC = () => {
       {/* 1. Project Command Dashboard KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Total / Active</span>
+          <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Total / Active</span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className="text-2xl font-outfit font-black text-text-primary">{stats.totalProjects}</span>
-            <span className="text-xs text-text-muted">/</span>
-            <span className="text-sm font-semibold text-brand">{stats.activeProjects} Active</span>
+            <span className="text-2xl font-outfit font-bold text-[var(--text-primary)]">{stats.totalProjects}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">/</span>
+            <span className="text-sm font-semibold text-[var(--accent)]">{stats.activeProjects} Active</span>
           </div>
-          <p className="text-[9px] text-text-muted mt-1">Enterprise projects registry</p>
+          <p className="text-[12px] text-[var(--text-tertiary)] mt-1">Enterprise projects registry</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Delayed / On Hold</span>
+          <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Delayed / On Hold</span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className="text-2xl font-outfit font-black text-rose-500">{stats.delayedProjects}</span>
-            <span className="text-xs text-text-muted">/</span>
-            <span className="text-sm font-semibold text-text-secondary">{stats.onHoldProjects} On Hold</span>
+            <span className="text-2xl font-outfit font-bold text-rose-500">{stats.delayedProjects}</span>
+            <span className="text-xs text-[var(--text-tertiary)]">/</span>
+            <span className="text-sm font-semibold text-[var(--text-secondary)]">{stats.onHoldProjects} On Hold</span>
           </div>
-          <p className="text-[9px] text-rose-500/80 mt-1">Attention required alerts</p>
+          <p className="text-[12px] text-rose-500/80 mt-1">Attention required alerts</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Average Portfolio Health</span>
+          <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Average Portfolio Health</span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className={`text-2xl font-outfit font-black ${stats.averageDeliveryHealth >= 75 ? 'text-emerald-400' : 'text-yellow-500'}`}>
+            <span className={`text-2xl font-outfit font-bold ${stats.averageDeliveryHealth >= 75 ? 'text-emerald-400' : 'text-yellow-500'}`}>
               {stats.averageDeliveryHealth}%
             </span>
           </div>
-          <p className="text-[9px] text-text-muted mt-1">Weighted KPI scoring index</p>
+          <p className="text-[12px] text-[var(--text-tertiary)] mt-1">Weighted KPI scoring index</p>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Budget Utilization</span>
+          <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Budget Utilization</span>
           <div className="flex flex-col mt-2">
-            <span className="text-sm font-bold text-text-primary">${stats.budgetUsed.toLocaleString()} Used</span>
-            <span className="text-[10px] text-text-secondary mt-0.5">Total: ${stats.totalBudget.toLocaleString()}</span>
+            <span className="text-sm font-bold text-[var(--text-primary)]">${stats.budgetUsed.toLocaleString()} Used</span>
+            <span className="text-[12px] text-[var(--text-secondary)] mt-0.5">Total: ${stats.totalBudget.toLocaleString()}</span>
           </div>
-          <div className="w-full bg-surface-card rounded-full h-1 mt-2.5 overflow-hidden">
+          <div className="w-full bg-[var(--bg-surface)] rounded-full h-1 mt-2.5 overflow-hidden">
             <div className="bg-blue-500 h-full rounded-full animate-pulse" style={{ width: `${Math.min(100, Math.round((stats.budgetUsed / Math.max(1, stats.totalBudget)) * 100))}%` }} />
           </div>
         </GlassCard>
 
         <GlassCard className="p-4 flex flex-col justify-between">
-          <span className="text-[10px] text-text-secondary font-bold uppercase tracking-wider">Team Utilization</span>
+          <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Team Utilization</span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className="text-2xl font-outfit font-black text-indigo-400">{stats.averageTeamUtilization}%</span>
+            <span className="text-2xl font-outfit font-bold text-indigo-400">{stats.averageTeamUtilization}%</span>
           </div>
-          <p className="text-[9px] text-text-muted mt-1">Allocated active bench strength</p>
+          <p className="text-[12px] text-[var(--text-tertiary)] mt-1">Allocated active bench strength</p>
         </GlassCard>
       </div>
 
@@ -595,15 +663,15 @@ export const Projects: React.FC = () => {
           <GlassCard className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
               <div>
-                <h3 className="font-outfit font-extrabold text-base text-text-primary">Company Project Directory</h3>
-                <p className="text-xs text-text-secondary">Search, filter, and execute operational CRUD tasks on portfolio projects.</p>
+                <h3 className="font-outfit font-semibold text-base text-[var(--text-primary)]">Company Project Directory</h3>
+                <p className="text-xs text-[var(--text-secondary)]">Search, filter, and execute operational CRUD tasks on portfolio projects.</p>
               </div>
               <button
                 onClick={() => {
                   setFormProject({ tags: [], requiredSkills: ['React', 'TypeScript'] });
                   setIsCreateOpen(true);
                 }}
-                className="py-2.5 px-4 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-card transition-all"
+                className="py-2.5 px-4 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm transition-all"
               >
                 <Plus className="w-4 h-4" />
                 <span>Create Project</span>
@@ -613,20 +681,20 @@ export const Projects: React.FC = () => {
             {/* Filters Bar */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
               <div className="relative">
-                <Search className="w-4 h-4 text-text-muted absolute left-3 top-3" />
+                <Search className="w-4 h-4 text-[var(--text-tertiary)] absolute left-3 top-3" />
                 <input
                   type="text"
                   placeholder="Search project name..."
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs py-2.5 pl-9 text-text-primary placeholder:text-text-muted"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs py-2.5 pl-9 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2.5 text-[var(--text-secondary)]"
               >
                 <option value="">All Statuses</option>
                 <option value="Planning">Planning</option>
@@ -640,7 +708,7 @@ export const Projects: React.FC = () => {
               <select
                 value={priorityFilter}
                 onChange={e => { setPriorityFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2.5 text-[var(--text-secondary)]"
               >
                 <option value="">All Priorities</option>
                 <option value="High">High</option>
@@ -651,7 +719,7 @@ export const Projects: React.FC = () => {
               <select
                 value={healthFilter}
                 onChange={e => { setHealthFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2.5 text-[var(--text-secondary)]"
               >
                 <option value="">All Health Scores</option>
                 <option value="Excellent">Excellent (&ge;90)</option>
@@ -667,7 +735,7 @@ export const Projects: React.FC = () => {
               <select
                 value={clientFilter}
                 onChange={e => { setClientFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-[12px] p-2 text-[var(--text-secondary)]"
               >
                 <option value="">All Clients</option>
                 {distinctClients.map(c => <option key={c} value={c}>{c}</option>)}
@@ -676,7 +744,7 @@ export const Projects: React.FC = () => {
               <select
                 value={industryFilter}
                 onChange={e => { setIndustryFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-[12px] p-2 text-[var(--text-secondary)]"
               >
                 <option value="">All Industries</option>
                 {distinctIndustries.map(i => <option key={i} value={i}>{i}</option>)}
@@ -685,7 +753,7 @@ export const Projects: React.FC = () => {
               <select
                 value={managerFilter}
                 onChange={e => { setManagerFilter(e.target.value); setCurrentPage(1); }}
-                className="bg-surface-sunken border border-border rounded-lg text-[10px] p-2 text-text-secondary"
+                className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-[12px] p-2 text-[var(--text-secondary)]"
               >
                 <option value="">All Managers</option>
                 {distinctManagers.map(m => <option key={m} value={m}>{m}</option>)}
@@ -703,7 +771,7 @@ export const Projects: React.FC = () => {
                     setSearchQuery('');
                     setCurrentPage(1);
                   }}
-                  className="px-3 text-[10px] font-bold text-brand bg-brand-tint border border-brand/20 rounded-lg hover:bg-brand-hover/20 transition-colors"
+                  className="px-3 text-[12px] font-bold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]/20 rounded-lg hover:bg-[var(--accent-hover)]/20 transition-colors"
                 >
                   Reset Filters
                 </button>
@@ -714,31 +782,39 @@ export const Projects: React.FC = () => {
             {isLoading ? (
               <SkeletonTable />
             ) : processedProjects.length === 0 ? (
-              <div className="py-20 text-center text-text-muted text-xs">No projects match the current filtering parameters.</div>
+              <div className="py-20 text-center text-[var(--text-tertiary)] text-xs border border-dashed border-[var(--border-default)] rounded-xl mt-4 bg-[var(--bg-surface)]">
+                <span className="block mb-3">No projects match the current filtering parameters.</span>
+                <button 
+                  onClick={() => window.location.hash = 'settings-import'} 
+                  className="font-medium text-[var(--accent)] hover:underline"
+                >
+                  Import from CSV
+                </button>
+              </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse border border-border bg-surface-card rounded-md overflow-hidden shadow-card">
-                  <thead className="bg-surface-sunken">
-                    <tr className="border-b border-border text-[10px] text-text-secondary uppercase tracking-wider font-extrabold">
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('name')}>
+                <table className="w-full text-left border-collapse border border-[var(--border-default)] bg-[var(--bg-surface)] rounded-md overflow-hidden shadow-sm">
+                  <thead className="bg-[var(--bg-canvas)]">
+                    <tr className="border-b border-[var(--border-default)] text-[12px] text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('name')}>
                         <div className="flex items-center gap-1">Project Name <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('client')}>
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('client')}>
                         <div className="flex items-center gap-1">Client / BU <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('priority')}>
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('priority')}>
                         <div className="flex items-center gap-1">Priority <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('status')}>
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('status')}>
                         <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('budget')}>
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('budget')}>
                         <div className="flex items-center gap-1">Budget <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary cursor-pointer" onClick={() => handleSort('healthScore')}>
+                      <th className="p-3 text-[var(--text-secondary)] cursor-pointer" onClick={() => handleSort('healthScore')}>
                         <div className="flex items-center gap-1">Health Score <ArrowUpDown className="w-3 h-3" /></div>
                       </th>
-                      <th className="p-3 text-text-secondary text-right">Actions</th>
+                      <th className="p-3 text-[var(--text-secondary)] text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
@@ -749,41 +825,41 @@ export const Projects: React.FC = () => {
                         <tr
                           key={proj.id}
                           onClick={() => handleSelectProject(proj.id)}
-                          className={`group cursor-pointer transition-colors ${isSelected ? 'bg-brand-tint' : 'hover:bg-surface-card hover:bg-surface-sunken'}`}
+                          className={`group cursor-pointer transition-colors ${isSelected ? 'bg-[var(--accent-soft)]' : 'hover:bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)]'}`}
                         >
                           <td className="p-3 pr-3">
-                            <div className="font-bold text-xs text-text-primary group-hover:text-brand transition-colors">{proj.name}</div>
-                            <div className="text-[10px] text-text-secondary mt-0.5">{proj.projectCode || 'No Code'}</div>
+                            <div className="font-bold text-xs text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors">{proj.name}</div>
+                            <div className="text-[12px] text-[var(--text-secondary)] mt-0.5">{proj.projectCode || 'No Code'}</div>
                           </td>
                           <td className="p-3 px-1 text-xs">
-                            <div className="font-semibold text-text-primary">{proj.client || 'Internal'}</div>
-                            <div className="text-[10px] text-text-muted mt-0.5">{proj.businessUnit || 'General'}</div>
+                            <div className="font-semibold text-[var(--text-primary)]">{proj.client || 'Internal'}</div>
+                            <div className="text-[12px] text-[var(--text-tertiary)] mt-0.5">{proj.businessUnit || 'General'}</div>
                           </td>
                           <td className="p-3 px-1 text-xs">
-                            <span className={`px-2 py-0.5 text-[9px] font-bold border rounded-md ${
-                              proj.priority === 'High' ? 'bg-danger-tint text-danger border-danger/20' :
-                              proj.priority === 'Medium' ? 'bg-danger-tint text-danger border-danger/20' :
-                              'bg-slate-500/10 text-text-secondary border-border'
+                            <span className={`px-2 py-0.5 text-[12px] font-bold border rounded-md ${
+                              proj.priority === 'High' ? 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20' :
+                              proj.priority === 'Medium' ? 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20' :
+                              'bg-slate-500/10 text-[var(--text-secondary)] border-[var(--border-default)]'
                             }`}>
                               {proj.priority}
                             </span>
                           </td>
                           <td className="p-3 px-1 text-xs">
-                            <span className={`px-2 py-0.5 text-[9px] font-bold border rounded-md ${
-                              proj.status === 'Active' ? 'bg-brand-tint text-brand border-brand/20' :
+                            <span className={`px-2 py-0.5 text-[12px] font-bold border rounded-md ${
+                              proj.status === 'Active' ? 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/20' :
                               proj.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
                               proj.status === 'Delayed' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' :
                               proj.status === 'On Hold' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                              'bg-slate-500/10 text-text-secondary border-border'
+                              'bg-slate-500/10 text-[var(--text-secondary)] border-[var(--border-default)]'
                             }`}>
                               {proj.status}
                             </span>
                           </td>
-                          <td className="p-3 px-1 text-xs font-bold text-text-primary">
+                          <td className="p-3 px-1 text-xs font-bold text-[var(--text-primary)]">
                             ${(proj.budget || 0).toLocaleString()}
                           </td>
                           <td className="p-3 px-1 text-xs">
-                            <span className={`px-2 py-1 rounded-lg text-[10px] font-extrabold border ${getHealthBGClass(score)}`}>
+                            <span className={`px-2 py-1 rounded-lg text-[12px] font-semibold border ${getHealthBGClass(score)}`}>
                               {score}% {proj.healthLevel || 'Excellent'}
                             </span>
                           </td>
@@ -794,21 +870,21 @@ export const Projects: React.FC = () => {
                                   setFormProject(proj);
                                   setIsEditOpen(true);
                                 }}
-                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                                className="p-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)] border border-[var(--border-default)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-colors"
                                 title="Edit Project"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleDuplicateProject(proj)}
-                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                                className="p-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)] border border-[var(--border-default)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-colors"
                                 title="Duplicate Project"
                               >
                                 <Copy className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={() => handleArchiveProject(proj)}
-                                className="p-1.5 bg-surface-card hover:bg-surface-sunken border border-border hover:border-border-strong text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                                className="p-1.5 bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)] border border-[var(--border-default)] hover:border-[var(--border-strong)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-lg transition-colors"
                                 title="Archive Project"
                               >
                                 <Archive className="w-3.5 h-3.5" />
@@ -832,20 +908,20 @@ export const Projects: React.FC = () => {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6 pt-4 border-t border-border">
-                <span className="text-[10px] text-text-secondary">Showing page {currentPage} of {totalPages}</span>
+              <div className="flex justify-between items-center mt-6 pt-4 border-t border-[var(--border-default)]">
+                <span className="text-[12px] text-[var(--text-secondary)]">Showing page {currentPage} of {totalPages}</span>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="p-2 text-xs bg-surface-sunken hover:bg-surface-card disabled:opacity-50 text-text-secondary border border-border rounded-lg"
+                    className="p-2 text-xs bg-[var(--bg-canvas)] hover:bg-[var(--bg-surface)] disabled:opacity-50 text-[var(--text-secondary)] border border-[var(--border-default)] rounded-lg"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="p-2 text-xs bg-surface-sunken hover:bg-surface-card disabled:opacity-50 text-text-secondary border border-border rounded-lg"
+                    className="p-2 text-xs bg-[var(--bg-canvas)] hover:bg-[var(--bg-surface)] disabled:opacity-50 text-[var(--text-secondary)] border border-[var(--border-default)] rounded-lg"
                   >
                     Next
                   </button>
@@ -858,50 +934,50 @@ export const Projects: React.FC = () => {
         {/* Right Column: Project Detail Panel (Tabs Overview/AI Insights/Timeline) */}
         <div className="xl:col-span-4 h-full">
           {isDetailLoading ? (
-            <GlassCard className="p-8 text-center"><RefreshCw className="w-6 h-6 text-brand animate-spin mx-auto mb-2" /><span className="text-xs text-text-secondary">Loading project analytics...</span></GlassCard>
+            <GlassCard className="p-8 text-center"><RefreshCw className="w-6 h-6 text-[var(--accent)] animate-spin mx-auto mb-2" /><span className="text-xs text-[var(--text-secondary)]">Loading project analytics...</span></GlassCard>
           ) : !selectedProject ? (
-            <GlassCard className="p-8 text-center text-xs text-text-muted flex flex-col items-center justify-center h-80">
-              <FolderGit className="w-10 h-10 text-text-muted mb-2" />
+            <GlassCard className="p-8 text-center text-xs text-[var(--text-tertiary)] flex flex-col items-center justify-center h-80">
+              <FolderGit className="w-10 h-10 text-[var(--text-tertiary)] mb-2" />
               <span>Select a project from the directory list to load the executive cockpit and AI insights.</span>
             </GlassCard>
           ) : (
             <div className="space-y-6">
               
               {/* Project Header details & Health Score circle */}
-              <GlassCard glow className="p-5 border-brand/20">
+              <GlassCard glow className="p-5 border-[var(--accent)]/20">
                 <div className="flex justify-between items-start">
                   <div>
-                    <span className="px-2 py-0.5 bg-surface-card border border-border text-brand font-extrabold text-[8px] tracking-widest uppercase rounded">
+                    <span className="px-2 py-0.5 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--accent)] font-semibold text-[12px] tracking-widest uppercase rounded">
                       {selectedProject.project.projectCode || 'GENERAL'}
                     </span>
-                    <h3 className="font-outfit font-black text-text-primary mt-2 text-base leading-tight">
+                    <h3 className="font-outfit font-bold text-[var(--text-primary)] mt-2 text-base leading-tight">
                       {selectedProject.project.name}
                     </h3>
-                    <p className="text-[10px] text-text-secondary mt-1 line-clamp-2">{selectedProject.project.description}</p>
+                    <p className="text-[12px] text-[var(--text-secondary)] mt-1 line-clamp-2">{selectedProject.project.description}</p>
                   </div>
                   
                   {/* Health Score Circular indicator */}
                   <div className="flex flex-col items-center shrink-0">
-                    <div className={`w-14 h-14 border-[3px] rounded-full flex flex-col items-center justify-center font-outfit font-black text-sm relative ${getHealthColorClass(selectedProject.healthScore)}`}>
+                    <div className={`w-14 h-14 border-[3px] rounded-full flex flex-col items-center justify-center font-outfit font-bold text-sm relative ${getHealthColorClass(selectedProject.healthScore)}`}>
                       {selectedProject.healthScore}%
                     </div>
-                    <span className="text-[8px] font-bold uppercase tracking-wider text-text-secondary mt-1">Health Score</span>
+                    <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--text-secondary)] mt-1">Health Score</span>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-border flex justify-between items-center text-[10px] text-text-secondary">
-                  <span>Manager: <strong className="text-text-primary">{selectedProject.project.projectManager || 'Unassigned'}</strong></span>
-                  <span>End Date: <strong className="text-text-primary">{selectedProject.project.endDate || 'N/A'}</strong></span>
+                <div className="mt-4 pt-3 border-t border-[var(--border-default)] flex justify-between items-center text-[12px] text-[var(--text-secondary)]">
+                  <span>Manager: <strong className="text-[var(--text-primary)]">{selectedProject.project.projectManager || 'Unassigned'}</strong></span>
+                  <span>End Date: <strong className="text-[var(--text-primary)]">{selectedProject.project.endDate || 'N/A'}</strong></span>
                 </div>
               </GlassCard>
 
               {/* Sub-tabs selector */}
-              <div className="flex overflow-x-auto gap-1 bg-surface-sunken p-1 border border-border rounded-xl">
+              <div className="flex overflow-x-auto gap-1 bg-[var(--bg-canvas)] p-1 border border-[var(--border-default)] rounded-xl">
                 {(['overview', 'health', 'team', 'timeline', 'skills', 'documents', 'risks'] as const).map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
-                    className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === tab ? 'bg-brand text-white text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                    className={`px-3 py-1.5 text-[12px] font-bold uppercase tracking-wider rounded-lg transition-all ${activeTab === tab ? 'bg-[var(--accent)] text-white text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
                   >
                     {tab}
                   </button>
@@ -911,39 +987,39 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: OVERVIEW */}
               {activeTab === 'overview' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-brand" /> Basic Information</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><Briefcase className="w-4 h-4 text-[var(--accent)]" /> Basic Information</h4>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-[10px] text-text-muted block">Client</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.client || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Client</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.client || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Industry</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.industry || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Industry</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.industry || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Business Unit</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.businessUnit || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Business Unit</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.businessUnit || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Start Date</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.startDate || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Start Date</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.startDate || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Technical Lead</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.technicalLead || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Technical Lead</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.technicalLead || 'N/A'}</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-text-muted block">Delivery Lead</span>
-                      <span className="font-bold text-text-primary">{selectedProject.project.deliveryLead || 'N/A'}</span>
+                      <span className="text-[12px] text-[var(--text-tertiary)] block">Delivery Lead</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.project.deliveryLead || 'N/A'}</span>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-border">
-                    <span className="text-[10px] text-text-muted block mb-1.5">Project Tags</span>
+                  <div className="mt-4 pt-3 border-t border-[var(--border-default)]">
+                    <span className="text-[12px] text-[var(--text-tertiary)] block mb-1.5">Project Tags</span>
                     <div className="flex flex-wrap gap-1.5">
                       {(selectedProject.project.tags || []).map((t: string) => (
-                        <span key={t} className="text-[9px] bg-surface-card border border-border text-text-secondary px-2 py-0.5 rounded-lg">{t}</span>
+                        <span key={t} className="text-[12px] bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] px-2 py-0.5 rounded-lg">{t}</span>
                       ))}
                     </div>
                   </div>
@@ -953,50 +1029,50 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: HEALTH */}
               {activeTab === 'health' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-4 h-4 text-brand" /> AI Project Health Engine</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><Gauge className="w-4 h-4 text-[var(--accent)]" /> AI Project Health Engine</h4>
                   
                   {/* Health Trends */}
                   <div className="grid grid-cols-2 gap-3 text-center">
-                    <div className="p-3 bg-surface-card/30 border border-border rounded-xl">
-                      <span className="text-[8px] font-bold text-text-secondary uppercase block">Weekly Trend</span>
-                      <span className={`text-sm font-black mt-1 block ${selectedProject.healthTrendWeek >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                    <div className="p-3 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-xl">
+                      <span className="text-[12px] font-bold text-[var(--text-secondary)] uppercase block">Weekly Trend</span>
+                      <span className={`text-sm font-bold mt-1 block ${selectedProject.healthTrendWeek >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
                         {selectedProject.healthTrendWeek >= 0 ? `+${selectedProject.healthTrendWeek}` : selectedProject.healthTrendWeek}%
                       </span>
                     </div>
-                    <div className="p-3 bg-surface-card/30 border border-border rounded-xl">
-                      <span className="text-[8px] font-bold text-text-secondary uppercase block">Monthly Trend</span>
-                      <span className={`text-sm font-black mt-1 block ${selectedProject.healthTrendMonth >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                    <div className="p-3 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-xl">
+                      <span className="text-[12px] font-bold text-[var(--text-secondary)] uppercase block">Monthly Trend</span>
+                      <span className={`text-sm font-bold mt-1 block ${selectedProject.healthTrendMonth >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
                         {selectedProject.healthTrendMonth >= 0 ? `+${selectedProject.healthTrendMonth}` : selectedProject.healthTrendMonth}%
                       </span>
                     </div>
                   </div>
 
                   {/* AI Explanation reasoning */}
-                  <div className="p-4 bg-surface-card/20 border border-border rounded-2xl">
-                    <div className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-brand"><Brain className="w-3.5 h-3.5" /> AI Diagnostic Reasoning</div>
-                    <p className="text-[11px] text-text-secondary mt-2 leading-relaxed">{selectedProject.healthExplanation}</p>
+                  <div className="p-4 bg-[var(--bg-surface)]/20 border border-[var(--border-default)] rounded-2xl">
+                    <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase text-[var(--accent)]"><Brain className="w-3.5 h-3.5" /> AI Diagnostic Reasoning</div>
+                    <p className="text-[12px] text-[var(--text-secondary)] mt-2 leading-relaxed">{selectedProject.healthExplanation}</p>
                   </div>
 
                   {/* Forecast Panel dials */}
-                  <div className="space-y-3 pt-3 border-t border-border">
-                    <div className="flex justify-between text-[10px] font-medium text-text-secondary">
+                  <div className="space-y-3 pt-3 border-t border-[var(--border-default)]">
+                    <div className="flex justify-between text-[12px] font-medium text-[var(--text-secondary)]">
                       <span>Chance of On-Time Delivery</span>
-                      <span className="font-bold text-text-primary">{selectedProject.forecast.chanceOfOnTimeDelivery}%</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.forecast.chanceOfOnTimeDelivery}%</span>
                     </div>
-                    <div className="w-full bg-surface-sunken border border-border rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-full h-1.5 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${selectedProject.forecast.chanceOfOnTimeDelivery}%` }} />
                     </div>
 
-                    <div className="flex justify-between text-[10px] font-medium text-text-secondary">
+                    <div className="flex justify-between text-[12px] font-medium text-[var(--text-secondary)]">
                       <span>Chance of Budget Overrun</span>
-                      <span className="font-bold text-text-primary">{selectedProject.forecast.chanceOfBudgetOverrun}%</span>
+                      <span className="font-bold text-[var(--text-primary)]">{selectedProject.forecast.chanceOfBudgetOverrun}%</span>
                     </div>
-                    <div className="w-full bg-surface-sunken border border-border rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-full h-1.5 overflow-hidden">
                       <div className="bg-rose-500 h-full rounded-full" style={{ width: `${selectedProject.forecast.chanceOfBudgetOverrun}%` }} />
                     </div>
 
-                    <div className="flex justify-between items-center text-[10px] text-text-secondary pt-2">
-                      <span>Est. Completion: <strong className="text-text-primary">{selectedProject.forecast.estimatedCompletionDate}</strong></span>
+                    <div className="flex justify-between items-center text-[12px] text-[var(--text-secondary)] pt-2">
+                      <span>Est. Completion: <strong className="text-[var(--text-primary)]">{selectedProject.forecast.estimatedCompletionDate}</strong></span>
                       <span>Delivery Confidence: <strong className="text-indigo-400">{selectedProject.deliveryConfidence}%</strong></span>
                     </div>
                   </div>
@@ -1006,36 +1082,36 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: TEAM ASSIGNMENT */}
               {activeTab === 'team' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Users className="w-4 h-4 text-brand" /> Team Allocation</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><Users className="w-4 h-4 text-[var(--accent)]" /> Team Allocation</h4>
                   
                   {/* Members list */}
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                     {selectedProject.members.length === 0 ? (
-                      <div className="text-[10px] text-text-muted text-center py-4">No team members assigned to this project yet.</div>
+                      <div className="text-[12px] text-[var(--text-tertiary)] text-center py-4">No team members assigned to this project yet.</div>
                     ) : (
                       selectedProject.members.map((m: any) => {
                         const emp = employees.find(e => e.id === m.employeeId);
                         if (!emp) return null;
                         return (
-                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
+                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)]/80 transition-colors">
                             <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 bg-surface-sunken border border-border text-[10px] font-bold text-brand rounded-lg flex items-center justify-center uppercase">
+                              <div className="w-7 h-7 bg-[var(--bg-canvas)] border border-[var(--border-default)] text-[12px] font-bold text-[var(--accent)] rounded-lg flex items-center justify-center uppercase">
                                 {emp.name.split(' ').map((n: string) => n[0]).join('')}
                               </div>
                               <div>
-                                <h5 className="text-[10px] font-bold text-text-primary">{emp.name}</h5>
-                                <p className="text-[9px] text-text-muted leading-none mt-0.5">{m.role} | {m.allocation}% allocation</p>
+                                <h5 className="text-[12px] font-bold text-[var(--text-primary)]">{emp.name}</h5>
+                                <p className="text-[12px] text-[var(--text-tertiary)] leading-none mt-0.5">{m.role} | {m.allocation}% allocation</p>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2 text-right">
-                              <div className="text-[9px]">
-                                <div className="font-extrabold text-brand">{m.skillMatch}% match</div>
-                                <div className="text-text-muted text-[8px]">Perf: {m.performance.toFixed(1)}/5</div>
+                              <div className="text-[12px]">
+                                <div className="font-semibold text-[var(--accent)]">{m.skillMatch !== undefined ? m.skillMatch : 100}% match</div>
+                                <div className="text-[var(--text-tertiary)] text-[12px]">Perf: {m.performance ? m.performance.toFixed(1) : (emp?.performanceRating || 0).toFixed(1)}/5</div>
                               </div>
                               <button
                                 onClick={() => handleRemoveMember(m.id, emp.name)}
-                                className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
+                                className="p-1 hover:bg-rose-950/20 text-[var(--text-tertiary)] hover:text-rose-500 rounded transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1047,13 +1123,24 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Member Form */}
-                  <form onSubmit={handleAddMember} className="space-y-3 pt-3 border-t border-border">
-                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Assign Employee</span>
+                  <form onSubmit={handleAddMember} className="space-y-3 pt-3 border-t border-[var(--border-default)]">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase block">Assign Employee</span>
+                      <button 
+                        type="button" 
+                        onClick={handleAutoAssignAI} 
+                        disabled={isAutoAssigning}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 hover:bg-indigo-100 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                      >
+                        <Brain className={`w-3.5 h-3.5 ${isAutoAssigning ? 'animate-pulse' : ''}`} />
+                        {isAutoAssigning ? 'Analyzing...' : 'Auto Assign (AI)'}
+                      </button>
+                    </div>
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         value={newMember.employeeId}
                         onChange={e => setNewMember(prev => ({ ...prev, employeeId: e.target.value }))}
-                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                         required
                       >
                         <option value="">Select Talent...</option>
@@ -1063,7 +1150,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newMember.role}
                         onChange={e => setNewMember(prev => ({ ...prev, role: e.target.value as any }))}
-                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                       >
                         <option value="Technical Lead">Technical Lead</option>
                         <option value="Backend">Backend</option>
@@ -1082,12 +1169,12 @@ export const Projects: React.FC = () => {
                         placeholder="Allocation % (e.g., 50)"
                         value={newMember.allocation}
                         onChange={e => setNewMember(prev => ({ ...prev, allocation: Number(e.target.value) }))}
-                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                         min="10" max="100" required
                       />
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
+                        className="px-4 py-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold"
                       >
                         Assign
                       </button>
@@ -1099,26 +1186,26 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: TIMELINE & MILESTONES */}
               {activeTab === 'timeline' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-4 h-4 text-brand" /> Milestones & Timeline</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><Calendar className="w-4 h-4 text-[var(--accent)]" /> Milestones & Timeline</h4>
                   
                   {/* Milestones list */}
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {selectedProject.milestones.length === 0 ? (
-                      <div className="text-[10px] text-text-muted text-center py-4">No milestones scheduled yet.</div>
+                      <div className="text-[12px] text-[var(--text-tertiary)] text-center py-4">No milestones scheduled yet.</div>
                     ) : (
                       selectedProject.milestones.map((m: any) => {
                         const owner = employees.find(e => e.id === m.ownerId);
                         return (
-                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
+                          <div key={m.id} className="flex justify-between items-center p-2.5 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)]/80 transition-colors">
                             <div>
-                              <h5 className="text-[10px] font-bold text-text-primary">{m.name}</h5>
-                              <p className="text-[9px] text-text-secondary mt-0.5">Due: {m.dueDate} | Owner: {owner ? owner.name : 'Unassigned'}</p>
+                              <h5 className="text-[12px] font-bold text-[var(--text-primary)]">{m.name}</h5>
+                              <p className="text-[12px] text-[var(--text-secondary)] mt-0.5">Due: {m.dueDate} | Owner: {owner ? owner.name : 'Unassigned'}</p>
                             </div>
                             
                             <div className="flex items-center gap-2">
-                              <span className={`px-2 py-0.5 text-[8px] font-bold border rounded ${
-                                m.status === 'Planning' ? 'bg-surface-card text-text-secondary border-border' :
-                                m.status === 'Development' ? 'bg-brand-tint text-brand border-brand/20' :
+                              <span className={`px-2 py-0.5 text-[12px] font-bold border rounded ${
+                                m.status === 'Planning' ? 'bg-[var(--bg-surface)] text-[var(--text-secondary)] border-[var(--border-default)]' :
+                                m.status === 'Development' ? 'bg-[var(--accent-soft)] text-[var(--accent)] border-[var(--accent)]/20' :
                                 m.status === 'Testing' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
                                 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                               }`}>
@@ -1126,7 +1213,7 @@ export const Projects: React.FC = () => {
                               </span>
                               <button
                                 onClick={() => handleRemoveMilestone(m.id, m.name)}
-                                className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
+                                className="p-1 hover:bg-rose-950/20 text-[var(--text-tertiary)] hover:text-rose-500 rounded transition-colors"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1138,14 +1225,14 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Milestone form */}
-                  <form onSubmit={handleAddMilestone} className="space-y-3 pt-3 border-t border-border">
-                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Add Milestone</span>
+                  <form onSubmit={handleAddMilestone} className="space-y-3 pt-3 border-t border-[var(--border-default)]">
+                    <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase block">Add Milestone</span>
                     <input
                       type="text"
                       placeholder="Milestone target name..."
                       value={newMilestone.name}
                       onChange={e => setNewMilestone(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                      className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                       required
                     />
 
@@ -1154,14 +1241,14 @@ export const Projects: React.FC = () => {
                         type="date"
                         value={newMilestone.dueDate}
                         onChange={e => setNewMilestone(prev => ({ ...prev, dueDate: e.target.value }))}
-                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                         required
                       />
 
                       <select
                         value={newMilestone.ownerId}
                         onChange={e => setNewMilestone(prev => ({ ...prev, ownerId: e.target.value }))}
-                        className="bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                       >
                         <option value="">Owner...</option>
                         {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
@@ -1172,7 +1259,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newMilestone.status}
                         onChange={e => setNewMilestone(prev => ({ ...prev, status: e.target.value as any }))}
-                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                       >
                         <option value="Planning">Planning</option>
                         <option value="Design">Design</option>
@@ -1184,7 +1271,7 @@ export const Projects: React.FC = () => {
                       
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
+                        className="px-4 py-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold"
                       >
                         Add Target
                       </button>
@@ -1196,32 +1283,32 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: SKILLS & HEATMAP */}
               {activeTab === 'skills' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-brand" /> Project Skill Coverage</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><Brain className="w-4 h-4 text-[var(--accent)]" /> Project Skill Coverage</h4>
 
                   {radarData.length === 0 ? (
-                    <div className="text-[10px] text-text-muted text-center py-4">Define skills and assign members to generate radar charts.</div>
+                    <div className="text-[12px] text-[var(--text-tertiary)] text-center py-4">Define skills and assign members to generate radar charts.</div>
                   ) : (
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                          <PolarGrid stroke="#1e293b" />
-                          <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 8 }} />
+                          <PolarGrid stroke="#E6E8EB" />
+                          <PolarAngleAxis dataKey="subject" tick={{ fill: '#8A8F98', fontSize: 8 }} />
                           <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 8 }} />
                           <Radar name="Target Bench" dataKey="required" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.15} />
                           <Radar name="Current Roster" dataKey="current" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-                          <Tooltip contentStyle={{ backgroundColor: '#090d16', borderColor: '#1e293b' }} />
+                          <Tooltip contentStyle={{ backgroundColor: '#FFFFFF', borderColor: '#E6E8EB' }} />
                         </RadarChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
-                  <div className="space-y-2 pt-3 border-t border-border">
-                    <span className="text-[9px] font-bold uppercase text-text-secondary">Coverage Percentage</span>
-                    <div className="flex justify-between items-center text-xs text-text-secondary mt-1">
+                  <div className="space-y-2 pt-3 border-t border-[var(--border-default)]">
+                    <span className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Coverage Percentage</span>
+                    <div className="flex justify-between items-center text-xs text-[var(--text-secondary)] mt-1">
                       <span>Roster Skill Fit Score</span>
                       <strong className="text-emerald-400">{selectedProject.metrics.skillCoverage}%</strong>
                     </div>
-                    <div className="w-full bg-surface-sunken border border-border rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-full h-2 overflow-hidden">
                       <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${selectedProject.metrics.skillCoverage}%` }} />
                     </div>
                   </div>
@@ -1231,20 +1318,20 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: DOCUMENTS */}
               {activeTab === 'documents' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><FileText className="w-4 h-4 text-brand" /> Shared Documents</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><FileText className="w-4 h-4 text-[var(--accent)]" /> Shared Documents</h4>
                   
                   {/* Documents list */}
                   <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                     {selectedProject.documents.length === 0 ? (
-                      <div className="text-[10px] text-text-muted text-center py-4">No documentation uploaded yet.</div>
+                      <div className="text-[12px] text-[var(--text-tertiary)] text-center py-4">No documentation uploaded yet.</div>
                     ) : (
                       selectedProject.documents.map((d: any) => (
-                        <div key={d.id} className="flex justify-between items-center p-2.5 bg-surface-card/30 border border-border rounded-xl hover:border-border/80 transition-colors">
+                        <div key={d.id} className="flex justify-between items-center p-2.5 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-xl hover:border-[var(--border-default)]/80 transition-colors">
                           <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-text-secondary" />
+                            <FileText className="w-4 h-4 text-[var(--text-secondary)]" />
                             <div>
-                              <h5 className="text-[10px] font-bold text-text-primary truncate w-40">{d.name}</h5>
-                              <p className="text-[8px] text-text-muted">Uploaded: {d.uploadedAt} | {d.type}</p>
+                              <h5 className="text-[12px] font-bold text-[var(--text-primary)] truncate w-40">{d.name}</h5>
+                              <p className="text-[12px] text-[var(--text-tertiary)]">Uploaded: {d.uploadedAt} | {d.type}</p>
                             </div>
                           </div>
 
@@ -1253,13 +1340,13 @@ export const Projects: React.FC = () => {
                               href={d.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="px-2 py-1 bg-surface-sunken border border-border rounded text-[9px] font-bold text-brand hover:bg-surface-card transition-colors"
+                              className="px-2 py-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded text-[12px] font-bold text-[var(--accent)] hover:bg-[var(--bg-surface)] transition-colors"
                             >
                               Open
                             </a>
                             <button
                               onClick={() => handleRemoveDoc(d.id, d.name)}
-                              className="p-1 hover:bg-rose-950/20 text-text-muted hover:text-rose-500 rounded transition-colors"
+                              className="p-1 hover:bg-rose-950/20 text-[var(--text-tertiary)] hover:text-rose-500 rounded transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1270,14 +1357,14 @@ export const Projects: React.FC = () => {
                   </div>
 
                   {/* Add Document upload form */}
-                  <form onSubmit={handleAddDoc} className="space-y-3 pt-3 border-t border-border">
-                    <span className="text-[10px] text-text-secondary font-bold uppercase block">Register/Upload Document</span>
+                  <form onSubmit={handleAddDoc} className="space-y-3 pt-3 border-t border-[var(--border-default)]">
+                    <span className="text-[12px] text-[var(--text-secondary)] font-bold uppercase block">Register/Upload Document</span>
                     <input
                       type="text"
                       placeholder="Document name (e.g. Kickoff Slides)..."
                       value={newDoc.name}
                       onChange={e => setNewDoc(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                      className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                       required
                     />
 
@@ -1285,7 +1372,7 @@ export const Projects: React.FC = () => {
                       <select
                         value={newDoc.type}
                         onChange={e => setNewDoc(prev => ({ ...prev, type: e.target.value as any }))}
-                        className="flex-1 bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                       >
                         <option value="Overview">Overview</option>
                         <option value="Team">Team</option>
@@ -1299,7 +1386,7 @@ export const Projects: React.FC = () => {
                       
                       <button
                         type="submit"
-                        className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold animate-pulse"
+                        className="px-4 py-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold animate-pulse"
                       >
                         Register
                       </button>
@@ -1311,35 +1398,35 @@ export const Projects: React.FC = () => {
               {/* TAB CONTENT: ACTIVE RISKS */}
               {activeTab === 'risks' && (
                 <GlassCard className="p-5 space-y-4">
-                  <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-brand" /> Flagged Risks & Mitigations</h4>
+                  <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5"><AlertTriangle className="w-4 h-4 text-[var(--accent)]" /> Flagged Risks & Mitigations</h4>
                   
                   <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                     {selectedProject.risks.length === 0 ? (
-                      <div className="text-[10px] text-text-muted text-center py-4 flex flex-col items-center justify-center gap-1.5">
+                      <div className="text-[12px] text-[var(--text-tertiary)] text-center py-4 flex flex-col items-center justify-center gap-1.5">
                         <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                         <span>No risks flagged on delivery channels.</span>
                       </div>
                     ) : (
                       selectedProject.risks.map((r: any) => (
-                        <div key={r.id} className="p-3 bg-surface-card/30 border border-border rounded-2xl space-y-2">
+                        <div key={r.id} className="p-3 bg-[var(--bg-surface)]/30 border border-[var(--border-default)] rounded-2xl space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-black text-text-primary uppercase tracking-wider">{r.type}</span>
-                            <span className={`px-2 py-0.5 text-[8px] font-bold border rounded-md uppercase tracking-wider ${
-                              r.severity === 'Critical' ? 'bg-danger-tint text-danger border-danger/20' :
-                              r.severity === 'High' ? 'bg-danger-tint text-danger border-danger/20' :
+                            <span className="text-[12px] font-bold text-[var(--text-primary)] uppercase tracking-wider">{r.type}</span>
+                            <span className={`px-2 py-0.5 text-[12px] font-bold border rounded-md uppercase tracking-wider ${
+                              r.severity === 'Critical' ? 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20' :
+                              r.severity === 'High' ? 'bg-[var(--red-soft)] text-[var(--red)] border-[var(--red)]/20' :
                               r.severity === 'Medium' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                              'bg-slate-500/10 text-text-secondary border-border'
+                              'bg-slate-500/10 text-[var(--text-secondary)] border-[var(--border-default)]'
                             }`}>
                               {r.severity}
                             </span>
                           </div>
                           
-                          <p className="text-[10px] text-text-secondary leading-normal">{r.description}</p>
+                          <p className="text-[12px] text-[var(--text-secondary)] leading-normal">{r.description}</p>
                           
-                          <div className="pt-2 border-t border-border text-[10px]">
-                            <div className="font-semibold text-brand flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> AI Recommendation:</div>
-                            <p className="text-[10px] text-text-secondary mt-1 leading-normal italic">{r.recommendation}</p>
-                            <p className="text-[9px] text-emerald-400 font-extrabold mt-1">{r.expectedImprovement}</p>
+                          <div className="pt-2 border-t border-[var(--border-default)] text-[12px]">
+                            <div className="font-semibold text-[var(--accent)] flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" /> AI Recommendation:</div>
+                            <p className="text-[12px] text-[var(--text-secondary)] mt-1 leading-normal italic">{r.recommendation}</p>
+                            <p className="text-[12px] text-emerald-400 font-semibold mt-1">{r.expectedImprovement}</p>
                           </div>
                         </div>
                       ))
@@ -1356,92 +1443,92 @@ export const Projects: React.FC = () => {
 
       {/* 4. CRUD Modals: Create Project */}
       {isCreateOpen && (
-        <div className="fixed inset-0 bg-surface-sunken/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[var(--bg-canvas)]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <GlassCard className="max-w-md w-full p-6 space-y-4">
-            <h3 className="font-outfit font-black text-base text-text-primary">Create New Project</h3>
+            <h3 className="font-outfit font-bold text-base text-[var(--text-primary)]">Create New Project</h3>
             <form onSubmit={handleSaveCreate} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Name</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Name</label>
                   <input
                     type="text"
                     value={formProject.name || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Code</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Project Code</label>
                   <input
                     type="text"
                     placeholder="PRJ-ABC-01"
                     value={formProject.projectCode || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectCode: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-text-secondary">Description</label>
+                <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Description</label>
                 <textarea
                   value={formProject.description || ''}
                   onChange={e => setFormProject(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary h-16"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)] h-16"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Client</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Client</label>
                   <input
                     type="text"
                     value={formProject.client || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, client: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Industry</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Industry</label>
                   <input
                     type="text"
                     value={formProject.industry || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, industry: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Business Unit</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Business Unit</label>
                   <input
                     type="text"
                     value={formProject.businessUnit || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, businessUnit: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Manager</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Project Manager</label>
                   <input
                     type="text"
                     value={formProject.projectManager || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectManager: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Status</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Status</label>
                   <select
                     value={formProject.status || 'Planning'}
                     onChange={e => setFormProject(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
@@ -1451,11 +1538,11 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Priority</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Priority</label>
                   <select
                     value={formProject.priority || 'Medium'}
                     onChange={e => setFormProject(prev => ({ ...prev, priority: e.target.value as any }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -1463,33 +1550,33 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Budget ($)</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Budget ($)</label>
                   <input
                     type="number"
                     value={formProject.budget || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Start Date</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Start Date</label>
                   <input
                     type="date"
                     value={formProject.startDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">End Date</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">End Date</label>
                   <input
                     type="date"
                     value={formProject.endDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   />
                 </div>
               </div>
@@ -1498,13 +1585,13 @@ export const Projects: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateOpen(false)}
-                  className="px-4 py-2 bg-surface-card hover:bg-surface-sunken border border-border rounded-xl text-xs font-semibold text-text-secondary"
+                  className="px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs font-semibold text-[var(--text-secondary)]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold"
+                  className="px-4 py-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold"
                 >
                   Create
                 </button>
@@ -1516,91 +1603,91 @@ export const Projects: React.FC = () => {
 
       {/* CRUD Modals: Edit Project */}
       {isEditOpen && (
-        <div className="fixed inset-0 bg-surface-sunken/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[var(--bg-canvas)]/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <GlassCard className="max-w-md w-full p-6 space-y-4">
-            <h3 className="font-outfit font-black text-base text-text-primary">Edit Project</h3>
+            <h3 className="font-outfit font-bold text-base text-[var(--text-primary)]">Edit Project</h3>
             <form onSubmit={handleSaveEdit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Name</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Name</label>
                   <input
                     type="text"
                     value={formProject.name || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                     required
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Code</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Project Code</label>
                   <input
                     type="text"
                     value={formProject.projectCode || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectCode: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[9px] font-bold uppercase text-text-secondary">Description</label>
+                <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Description</label>
                 <textarea
                   value={formProject.description || ''}
                   onChange={e => setFormProject(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary h-16"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)] h-16"
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Client</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Client</label>
                   <input
                     type="text"
                     value={formProject.client || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, client: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Industry</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Industry</label>
                   <input
                     type="text"
                     value={formProject.industry || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, industry: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Business Unit</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Business Unit</label>
                   <input
                     type="text"
                     value={formProject.businessUnit || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, businessUnit: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Project Manager</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Project Manager</label>
                   <input
                     type="text"
                     value={formProject.projectManager || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, projectManager: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Status</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Status</label>
                   <select
                     value={formProject.status || 'Planning'}
                     onChange={e => setFormProject(prev => ({ ...prev, status: e.target.value as any }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   >
                     <option value="Planning">Planning</option>
                     <option value="Active">Active</option>
@@ -1611,11 +1698,11 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Priority</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Priority</label>
                   <select
                     value={formProject.priority || 'Medium'}
                     onChange={e => setFormProject(prev => ({ ...prev, priority: e.target.value as any }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   >
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
@@ -1623,33 +1710,33 @@ export const Projects: React.FC = () => {
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Budget ($)</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Budget ($)</label>
                   <input
                     type="number"
                     value={formProject.budget || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, budget: Number(e.target.value) }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-primary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">Start Date</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">Start Date</label>
                   <input
                     type="date"
                     value={formProject.startDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, startDate: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-bold uppercase text-text-secondary">End Date</label>
+                  <label className="text-[12px] font-bold uppercase text-[var(--text-secondary)]">End Date</label>
                   <input
                     type="date"
                     value={formProject.endDate || ''}
                     onChange={e => setFormProject(prev => ({ ...prev, endDate: e.target.value }))}
-                    className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2 text-text-secondary"
+                    className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2 text-[var(--text-secondary)]"
                   />
                 </div>
               </div>
@@ -1658,13 +1745,13 @@ export const Projects: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditOpen(false)}
-                  className="px-4 py-2 bg-surface-card hover:bg-surface-sunken border border-border rounded-xl text-xs font-semibold text-text-secondary"
+                  className="px-4 py-2 bg-[var(--bg-surface)] hover:bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs font-semibold text-[var(--text-secondary)]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brand text-white hover:bg-brand-hover text-white rounded-xl text-xs font-semibold animate-pulse"
+                  className="px-4 py-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-semibold animate-pulse"
                 >
                   Save Changes
                 </button>

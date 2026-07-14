@@ -3,6 +3,7 @@ dotenv.config();
 import Anthropic from '@anthropic-ai/sdk';
 import { Employee, Project } from '../db/seedData.js';
 import { sanitizeForAI } from '../utils/biasGuard.js';
+import { marketAnalysisService } from './marketAnalysis.js';
 
 class AIService {
   private anthropic: Anthropic | null = null;
@@ -114,7 +115,7 @@ Return ONLY a valid JSON array of objects matching this structure:
     }
 
     // --- Simulator Mode ---
-    return this.simulateLearningRecs(employee);
+    return await this.simulateLearningRecs(employee);
   }
 
   /**
@@ -313,11 +314,35 @@ User Question: "${message}"`;
     };
   }
 
-  private simulateLearningRecs(employee: Employee): any[] {
+  private async simulateLearningRecs(employee: Employee): Promise<any[]> {
     const role = employee.role.toLowerCase();
     const currentSkillNames = employee.technicalSkills.map(s => s.name.toLowerCase());
 
     const recs = [];
+    
+    // Fetch Market Gaps
+    try {
+      const marketSkills = await marketAnalysisService.getMarketSkills();
+      const emergingGaps = marketSkills.filter(s => s.emergingGap && !currentSkillNames.includes(s.name.toLowerCase()));
+      
+      if (emergingGaps.length > 0) {
+        // Pick top emerging gap
+        const topGap = emergingGaps.sort((a, b) => b.momentumScore - a.momentumScore)[0];
+        recs.push({
+          courseName: `[Market Gap] Accelerated ${topGap.name} Mastery`,
+          type: 'course',
+          roadmap: [
+            `Understand core paradigms and ecosystems of ${topGap.name}`,
+            `Build a prototype utilizing ${topGap.name} to address current internal use-cases`,
+            'Become an internal champion and prepare a brown-bag session'
+          ],
+          timeline: '4 weeks',
+          description: `Market Intelligence indicates ${topGap.name} has surging market momentum (${topGap.momentumScore} score) but critically low internal coverage. Upskilling here offers high impact.`
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to inject market gaps:", e);
+    }
 
     // Course 1: Main role advancement
     if (role.includes('frontend') || role.includes('react') || role.includes('designer')) {
@@ -424,9 +449,10 @@ User Question: "${message}"`;
       });
     }
 
-    // Recommendation 4: Practice project
-    recs.push({
-      courseName: 'Build an Event-Driven Task Scheduler Platform',
+    // Recommendation 4: Practice project (only add if we don't have 4 recs already)
+    if (recs.length < 4) {
+      recs.push({
+        courseName: 'Build an Event-Driven Task Scheduler Platform',
       type: 'project',
       roadmap: [
         'Write task queuing backend using Redis streams and Node/Python worker threads',
@@ -435,9 +461,10 @@ User Question: "${message}"`;
       ],
       timeline: '4 weeks',
       description: 'Hands-on project to practice systems design, concurrency, redis caching, and real-time WebSockets/SSE channels.'
-    });
+      });
+    }
 
-    return recs;
+    return recs.slice(0, 4);
   }
 
   private simulatePromotionReadiness(employee: Employee): any {

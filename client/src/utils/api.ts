@@ -77,12 +77,221 @@ export interface LearningRecommendation {
   description: string;
 }
 
+export interface ProjectDocument {
+  id: string;
+  projectId: string;
+  name: string;
+  type: string;
+  url: string;
+  uploadedAt: string;
+  uploadedBy: string;
+}
+
+export interface MarketSkill {
+  id: string;
+  name: string;
+  momentumScore: number;
+  internalCoverage: number;
+  emergingGap: boolean;
+  lastUpdated: string;
+}
+
 export interface PromotionEvaluation {
+  status: 'Ready' | 'Developing' | 'Not Ready';
+  readinessScore: number;
   promotionScore: number;
+  nextLevel: string;
+  keyGaps: string[];
+  justification: string;
   reasoning: string;
   areasToImprove: string[];
-  evaluatedAt?: string;
 }
+
+// --- Reports Interfaces ---
+export type ReportType =
+  | 'headcount_summary'
+  | 'attrition_report'
+  | 'skill_inventory'
+  | 'bench_utilization'
+  | 'hiring_funnel'
+  | 'drive_performance'
+  | 'source_effectiveness'
+  | 'portfolio_health'
+  | 'staffing_allocation'
+  | 'risk_spof'
+  | 'org_capability'
+  | 'cost_summary'
+  | 'board_snapshot';
+
+export interface ScheduledReport {
+  id: string;
+  name: string;
+  type: ReportType;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly';
+  recipients: string[];
+  nextRun: string;
+  format: 'pdf' | 'csv' | 'excel';
+  status: 'active' | 'paused';
+}
+
+export interface GeneratedReport {
+  id: string;
+  name: string;
+  type: ReportType;
+  filters: any;
+  format: 'pdf' | 'csv' | 'excel' | 'on-screen';
+  fileUrl?: string;
+  generatedBy: string;
+  createdAt: string;
+}
+// --- Onboarding Interfaces ---
+export interface OnboardingTask {
+  id: string;
+  name: string;
+  phase: 'Before Day 1' | 'Week 1' | 'Weeks 2-4' | 'Days 30/60/90';
+  ownerId: string;
+  dueDate: string;
+  status: 'Upcoming' | 'Due today' | 'Overdue' | 'Done';
+}
+
+export interface OnboardingRecord {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  role: string;
+  department: string;
+  startDate: string;
+  progress: number;
+  status: 'On Track' | 'At Risk' | 'Completed';
+  tasks: OnboardingTask[];
+  buddyId?: string;
+}
+// --- Marketplace Interfaces ---
+export interface Opportunity {
+  id: string;
+  title: string;
+  projectId?: string;
+  projectName?: string;
+  description: string;
+  requiredSkills: string[];
+  niceToHaveSkills: string[];
+  timeCommitment: string;
+  priorityTag: 'Low priority' | 'Stretch opportunity' | 'Short-term' | 'Backfill needed';
+  departmentScope: string;
+  deadline?: string;
+  status: 'Open' | 'Closing Soon' | 'Closed' | 'Filled' | 'Archived';
+  postedBy: string;
+  createdAt: string;
+  applicantCount: number;
+  matchScore?: number; // Only for current user
+  matchReason?: string; // AI generated one-liner
+  hasApplied?: boolean;
+}
+
+export interface OpportunityApplication {
+  id: string;
+  opportunityId: string;
+  employeeId: string;
+  employeeName: string;
+  role: string;
+  department: string;
+  note: string;
+  status: 'Submitted' | 'Under Review' | 'Shortlisted' | 'Accepted' | 'Not Selected' | 'Withdrawn';
+  appliedAt: string;
+  matchScore: number;
+  currentAllocation: number; // pulled from staffing engine
+}
+
+// --- Import Interfaces ---
+export interface ImportLog {
+  id: string;
+  dataType: string;
+  fileName: string;
+  uploadedBy: string;
+  totalRows: number;
+  importedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  status: 'processing' | 'completed' | 'completed_with_errors' | 'failed';
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface ParseResult {
+  headers: string[];
+  rowCount: number;
+  previewData: any[]; // First N rows
+}
+
+export interface ValidationResult {
+  validCount: number;
+  warningCount: number;
+  errorCount: number;
+  duplicateCount: number;
+  errors: { row: number; reason: string }[];
+}
+
+// --- Skill Connect & Mentorship Interfaces ---
+export interface ConnectionRequest {
+  id: string;
+  requesterId: string;
+  recipientId: string;
+  type: 'quick_connect' | 'mentorship';
+  skillId: string;
+  message: string;
+  urgencyTag?: 'No rush' | 'This week' | 'Blocking me now';
+  goal?: string;
+  cadence?: 'One-off session' | 'Few sessions' | 'Ongoing';
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'ongoing';
+  createdAt: string;
+  respondedAt?: string;
+  
+  // Flattened properties for mock
+  requesterName?: string;
+  requesterRole?: string;
+  recipientName?: string;
+  recipientRole?: string;
+}
+
+export interface MentorshipRelationship {
+  id: string;
+  connectionRequestId: string;
+  requesterId: string;
+  mentorId: string;
+  skillId: string;
+  status: 'ongoing' | 'completed' | 'paused';
+  createdAt: string;
+  completedAt?: string;
+}
+
+export interface MentorshipNote {
+  id: string;
+  mentorshipRelationshipId: string;
+  authorId: string;
+  authorName: string;
+  noteText: string;
+  createdAt: string;
+}
+
+export interface MentorshipRating {
+  id: string;
+  mentorshipRelationshipId: string;
+  ratedById: string;
+  rating: number; // 1-5
+  comment?: string;
+  createdAt: string;
+}
+
+export interface AvailabilityPreference {
+  employeeId: string;
+  openToQuickQuestions: boolean;
+  openToMentorship: boolean;
+  skillsWillingToHelp: string[];
+  capacityNote: string;
+  updatedAt: string;
+}
+
+// -----------------------
 
 export interface DashboardStats {
   capabilityScore: number;
@@ -342,18 +551,7 @@ export interface AuditLog {
   created_at: string;
 }
 
-export interface ScheduledReport {
-  id: string;
-  user_id: string;
-  report_type: string;
-  filters: any;
-  frequency: 'weekly' | 'monthly';
-  recipient_emails: string[];
-  next_run_at: string;
-  created_at?: string;
-}
-
-const API_BASE = '/api';
+export const API_BASE = '/api';
 
 import { mockEmployees, mockProjects, mockDashboardStats, mockGapAnalysis } from './mockData';
 
@@ -424,6 +622,18 @@ export const api = {
   async getCapabilityRisks(): Promise<CapabilityRisk[]> {
     const res = await fetch(`${API_BASE}/analytics/capability-risks`);
     if (!res.ok) throw new Error('Failed to fetch capability risks');
+    return res.json();
+  },
+
+  async getMarketRadarData(): Promise<MarketSkill[]> {
+    const res = await fetch(`${API_BASE}/market-radar`);
+    if (!res.ok) throw new Error('Failed to fetch market radar data');
+    return res.json();
+  },
+
+  async syncMarketRadarData(): Promise<MarketSkill[]> {
+    const res = await fetch(`${API_BASE}/market-radar/sync`, { method: 'POST' });
+    if (!res.ok) throw new Error('Failed to sync market radar data');
     return res.json();
   },
 
@@ -892,6 +1102,397 @@ export const api = {
     const res = await fetch(`${API_BASE}/graph/sync`, { method: 'POST' });
     if (!res.ok) throw new Error('Failed to trigger graph sync');
     return res.json();
+  },
+
+
+  async getGeneratedReports(): Promise<GeneratedReport[]> {
+    return [
+      {
+        id: '101',
+        name: 'Q2 Portfolio Health',
+        type: 'portfolio_health',
+        filters: { dateRange: 'Last Quarter' },
+        format: 'pdf',
+        fileUrl: '#',
+        generatedBy: 'Admin User',
+        createdAt: new Date(Date.now() - 3 * 86400000).toISOString()
+      },
+      {
+        id: '102',
+        name: 'Current Bench Cost',
+        type: 'bench_utilization',
+        filters: { dateRange: 'YTD' },
+        format: 'csv',
+        fileUrl: '#',
+        generatedBy: 'Admin User',
+        createdAt: new Date(Date.now() - 1 * 86400000).toISOString()
+      }
+    ];
+  },
+
+  async generateReportSummary(type: ReportType, data: any): Promise<{ summary: string }> {
+    // Mocking an AI-generated executive summary
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          summary: `This report shows a steady trend over the selected period. Engineering headcount grew while attrition remained below the 5% threshold. Key areas of focus should be resolving the 3 critical single-points-of-failure in the Cloud Infrastructure team.`
+        });
+      }, 1000);
+    });
+  },
+
+  async askReportQuestion(type: ReportType, question: string, data: any): Promise<{ answer: string }> {
+    // Mocking AI response
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          answer: `Based on the underlying data, the primary cause for the spike was a 15% increase in unallocated senior staff during March, coupled with two high-budget projects stalling.`
+        });
+      }, 1500);
+    });
+  },
+
+  // ── Onboarding APIs (Mock) ──────────────────────────────────────
+
+  async getOnboardingRecords(): Promise<OnboardingRecord[]> {
+    return [
+      {
+        id: 'o-1',
+        employeeId: 'e-101',
+        employeeName: 'Sarah Chen',
+        role: 'Machine Learning Engineer',
+        department: 'Engineering',
+        startDate: new Date(Date.now() - 5 * 86400000).toISOString(),
+        progress: 45,
+        status: 'On Track',
+        buddyId: 'e-102',
+        tasks: [
+          { id: 't-1', name: 'Provision GitHub Access', phase: 'Before Day 1', ownerId: 'sys-admin', dueDate: new Date(Date.now() - 7 * 86400000).toISOString(), status: 'Done' },
+          { id: 't-2', name: 'Schedule team intro', phase: 'Week 1', ownerId: 'mgr-1', dueDate: new Date(Date.now() + 2 * 86400000).toISOString(), status: 'Upcoming' },
+          { id: 't-3', name: 'Submit code to onboarding repo', phase: 'Weeks 2-4', ownerId: 'e-101', dueDate: new Date(Date.now() + 15 * 86400000).toISOString(), status: 'Upcoming' },
+        ]
+      },
+      {
+        id: 'o-2',
+        employeeId: 'e-105',
+        employeeName: 'James Wilson',
+        role: 'Account Executive',
+        department: 'Sales',
+        startDate: new Date(Date.now() - 35 * 86400000).toISOString(),
+        progress: 80,
+        status: 'At Risk',
+        tasks: [
+          { id: 't-4', name: 'Complete CRM Training', phase: 'Weeks 2-4', ownerId: 'e-105', dueDate: new Date(Date.now() - 5 * 86400000).toISOString(), status: 'Overdue' },
+          { id: 't-5', name: 'First solo pitch presentation', phase: 'Days 30/60/90', ownerId: 'e-105', dueDate: new Date(Date.now() + 25 * 86400000).toISOString(), status: 'Upcoming' },
+        ]
+      }
+    ];
+  },
+
+  async updateOnboardingTask(recordId: string, taskId: string, status: string): Promise<void> {
+    // Mock save
+    console.log(`Updated task ${taskId} to ${status}`);
+  },
+
+  // ── Marketplace APIs (Mock) ──────────────────────────────────────
+
+  async getOpportunities(): Promise<Opportunity[]> {
+    return [
+      {
+        id: 'opp-1',
+        title: 'Backend support — Client Portal Revamp',
+        projectId: 'p-1',
+        projectName: 'Client Portal Revamp',
+        description: 'Need extra hands to help build out the new GraphQL API layer for the client portal. Good opportunity to learn our new stack.',
+        requiredSkills: ['Node.js', 'GraphQL'],
+        niceToHaveSkills: ['PostgreSQL', 'Redis'],
+        timeCommitment: '20% for 6 weeks',
+        priorityTag: 'Stretch opportunity',
+        departmentScope: 'All',
+        deadline: new Date(Date.now() + 5 * 86400000).toISOString(),
+        status: 'Open',
+        postedBy: 'mgr-1',
+        createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+        applicantCount: 3,
+        matchScore: 92,
+        matchReason: 'Your advanced GraphQL and Node.js skills closely match this opportunity\'s core requirements.',
+        hasApplied: false
+      },
+      {
+        id: 'opp-2',
+        title: 'Data Migration Audit',
+        projectId: 'p-2',
+        projectName: 'Legacy Migration',
+        description: 'Short-term help needed to audit the first pass of the legacy data migration. Attention to detail required.',
+        requiredSkills: ['SQL', 'Data Validation'],
+        niceToHaveSkills: ['Python'],
+        timeCommitment: '10 hours total',
+        priorityTag: 'Short-term',
+        departmentScope: 'Engineering',
+        status: 'Closing Soon',
+        postedBy: 'mgr-2',
+        createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+        applicantCount: 1,
+        matchScore: 65,
+        matchReason: 'You have the required SQL skills, though Python would be a bonus.',
+        hasApplied: true
+      },
+      {
+        id: 'opp-3',
+        title: 'UI Component Library Maintenance',
+        description: 'Looking for someone to own the ongoing maintenance of our shared React component library. Low intensity but requires consistency.',
+        requiredSkills: ['React', 'TypeScript', 'CSS'],
+        niceToHaveSkills: ['Storybook', 'Figma'],
+        timeCommitment: 'Part-time 15%',
+        priorityTag: 'Low priority',
+        departmentScope: 'Design & Engineering',
+        deadline: new Date(Date.now() + 15 * 86400000).toISOString(),
+        status: 'Open',
+        postedBy: 'mgr-3',
+        createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+        applicantCount: 0,
+        matchScore: 88,
+        matchReason: 'Your frontend stack aligns perfectly with this maintenance role.',
+        hasApplied: false
+      }
+    ];
+  },
+
+  async applyToOpportunity(oppId: string, note: string): Promise<void> {
+    console.log(`Applied to ${oppId} with note: ${note}`);
+  },
+
+  async withdrawApplication(appId: string): Promise<void> {
+    console.log(`Withdrew app ${appId}`);
+  },
+
+  async getMyApplications(): Promise<OpportunityApplication[]> {
+    return [
+      {
+        id: 'app-1',
+        opportunityId: 'opp-2',
+        employeeId: 'e-101',
+        employeeName: 'Current User',
+        role: 'Developer',
+        department: 'Engineering',
+        note: 'I helped write the original export script for the legacy DB.',
+        status: 'Under Review',
+        appliedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+        matchScore: 65,
+        currentAllocation: 85
+      }
+    ];
+  },
+
+  async getApplicantsForOpportunity(oppId: string): Promise<OpportunityApplication[]> {
+    return [
+      {
+        id: 'app-2',
+        opportunityId: oppId,
+        employeeId: 'e-104',
+        employeeName: 'Aisha Rahman',
+        role: 'Backend Engineer',
+        department: 'Engineering',
+        note: 'Looking to get more GraphQL experience.',
+        status: 'Submitted',
+        appliedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+        matchScore: 94,
+        currentAllocation: 100 // High allocation warning trigger
+      },
+      {
+        id: 'app-3',
+        opportunityId: oppId,
+        employeeId: 'e-105',
+        employeeName: 'James Wilson',
+        role: 'Full Stack Dev',
+        department: 'Engineering',
+        note: 'I worked on the old API, familiar with the domain.',
+        status: 'Under Review',
+        appliedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+        matchScore: 78,
+        currentAllocation: 60
+      }
+    ];
+  },
+
+  async updateApplicationStatus(appId: string, status: string): Promise<void> {
+    console.log(`Updated app ${appId} to ${status}`);
+  },
+
+  async postOpportunity(data: Partial<Opportunity>): Promise<void> {
+    console.log('Posted new opportunity:', data);
+  },
+
+  // ── Import APIs (Mock) ──────────────────────────────────────
+
+  async getImportLogs(): Promise<ImportLog[]> {
+    return [
+      {
+        id: 'imp-1',
+        dataType: 'Employees',
+        fileName: 'hris_export_q3.csv',
+        uploadedBy: 'Admin User',
+        totalRows: 145,
+        importedCount: 142,
+        skippedCount: 1,
+        failedCount: 2,
+        status: 'completed_with_errors',
+        createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
+        completedAt: new Date(Date.now() - 5 * 86400000 + 120000).toISOString()
+      },
+      {
+        id: 'imp-2',
+        dataType: 'Projects',
+        fileName: 'active_projects_2026.xlsx',
+        uploadedBy: 'Admin User',
+        totalRows: 34,
+        importedCount: 34,
+        skippedCount: 0,
+        failedCount: 0,
+        status: 'completed',
+        createdAt: new Date(Date.now() - 12 * 86400000).toISOString(),
+        completedAt: new Date(Date.now() - 12 * 86400000 + 45000).toISOString()
+      }
+    ];
+  },
+
+  async parseImportFile(file: File, dataType: string): Promise<ParseResult> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          headers: ['Emp Name', 'Email Address', 'Dept', 'Job Title', 'Start Date', 'Location', 'Internal ID'],
+          rowCount: 45,
+          previewData: [
+            { 'Emp Name': 'John Doe', 'Email Address': 'john@example.com', 'Dept': 'Engineering', 'Job Title': 'Frontend Dev', 'Start Date': '2023-01-15', 'Location': 'New York', 'Internal ID': '101' },
+            { 'Emp Name': 'Jane Smith', 'Email Address': 'jane@example.com', 'Dept': 'Sales', 'Job Title': 'Account Exec', 'Start Date': '2022-11-01', 'Location': 'London', 'Internal ID': '102' },
+            { 'Emp Name': 'Bob Wilson', 'Email Address': 'bob@example.com', 'Dept': 'Marketing', 'Job Title': 'Designer', 'Start Date': '2024-03-10', 'Location': 'Remote', 'Internal ID': '103' }
+          ]
+        });
+      }, 1000);
+    });
+  },
+
+  async validateImportMapping(dataType: string, mapping: Record<string, string>): Promise<ValidationResult> {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve({
+          validCount: 40,
+          warningCount: 3,
+          errorCount: 2,
+          duplicateCount: 1,
+          errors: [
+            { row: 14, reason: 'Invalid email format' },
+            { row: 22, reason: 'Missing required field: Name' }
+          ]
+        });
+      }, 1500);
+    });
+  },
+
+  async executeImport(dataType: string, mapping: Record<string, string>, duplicateResolution: string): Promise<string> {
+    // Return a mock job ID
+    return `job-${Date.now()}`;
+  },
+
+  // ── Skill Connect & Mentorship APIs (Mock) ──────────────────────────────────────
+
+  async getAvailabilityPreferences(employeeId: string): Promise<AvailabilityPreference> {
+    // Return mock preferences or default
+    return {
+      employeeId,
+      openToQuickQuestions: true,
+      openToMentorship: false,
+      skillsWillingToHelp: [],
+      capacityNote: '',
+      updatedAt: new Date().toISOString()
+    };
+  },
+
+  async updateAvailabilityPreferences(employeeId: string, prefs: Partial<AvailabilityPreference>): Promise<AvailabilityPreference> {
+    return {
+      employeeId,
+      openToQuickQuestions: prefs.openToQuickQuestions ?? true,
+      openToMentorship: prefs.openToMentorship ?? false,
+      skillsWillingToHelp: prefs.skillsWillingToHelp || [],
+      capacityNote: prefs.capacityNote || '',
+      updatedAt: new Date().toISOString()
+    };
+  },
+
+  async searchSkillExperts(skill: string, filters: any): Promise<Employee[]> {
+    const res = await this.getEmployees();
+    // Filter employees who have this skill
+    let experts = res.filter(e => 
+      e.technicalSkills.some(s => s.name.toLowerCase().includes(skill.toLowerCase()))
+    );
+
+    if (filters.minProficiency) {
+      experts = experts.filter(e => 
+        e.technicalSkills.some(s => 
+          s.name.toLowerCase().includes(skill.toLowerCase()) && 
+          s.proficiency >= filters.minProficiency
+        )
+      );
+    }
+    
+    // Additional mock filtering by availability, verification, etc. could go here
+    return experts;
+  },
+
+  async getConnectionRequests(userId: string): Promise<{ sent: ConnectionRequest[], received: ConnectionRequest[] }> {
+    return {
+      sent: [
+        {
+          id: 'cr-1',
+          requesterId: userId,
+          recipientId: 'e-105',
+          recipientName: 'David Kim',
+          recipientRole: 'Senior Data Scientist',
+          type: 'mentorship',
+          skillId: 'Python',
+          message: 'Looking to learn advanced pandas techniques',
+          goal: 'Automate data cleaning pipelines',
+          cadence: 'Few sessions',
+          status: 'pending',
+          createdAt: new Date(Date.now() - 2 * 86400000).toISOString()
+        }
+      ],
+      received: [
+        {
+          id: 'cr-2',
+          requesterId: 'e-108',
+          requesterName: 'Michael Chang',
+          requesterRole: 'QA Engineer',
+          recipientId: userId,
+          type: 'quick_connect',
+          skillId: 'Kubernetes',
+          message: 'I am getting a CrashLoopBackOff on the new staging pod, can you help me debug?',
+          urgencyTag: 'Blocking me now',
+          status: 'pending',
+          createdAt: new Date(Date.now() - 3600000).toISOString()
+        }
+      ]
+    };
+  },
+
+  async createConnectionRequest(req: Partial<ConnectionRequest>): Promise<ConnectionRequest> {
+    return {
+      id: `cr-${Date.now()}`,
+      requesterId: req.requesterId || 'current-user',
+      recipientId: req.recipientId || 'unknown',
+      type: req.type || 'quick_connect',
+      skillId: req.skillId || 'unknown',
+      message: req.message || '',
+      urgencyTag: req.urgencyTag,
+      goal: req.goal,
+      cadence: req.cadence,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+  },
+
+  async updateConnectionRequestStatus(id: string, status: ConnectionRequest['status']): Promise<boolean> {
+    return true; // mock success
   }
 };
 

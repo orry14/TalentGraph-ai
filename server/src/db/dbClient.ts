@@ -46,6 +46,15 @@ export interface ScheduledReport {
   created_at?: string;
 }
 
+export interface MarketSkill {
+  id?: string;
+  name: string;
+  momentumScore: number;
+  internalCoverage: number;
+  emergingGap: boolean;
+  lastUpdated: string;
+}
+
 // Setup __dirname equivalent in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +79,7 @@ interface Schema {
   recruitmentCandidates: RecruitmentCandidate[];
   auditLogs: AuditLog[];
   scheduledReports: ScheduledReport[];
+  marketSkills: MarketSkill[];
 }
 
 class DatabaseAdapter {
@@ -121,6 +131,7 @@ class DatabaseAdapter {
           if (!this.localData.recruitmentCandidates) this.localData.recruitmentCandidates = [];
           if (!this.localData.auditLogs) this.localData.auditLogs = [];
           if (!this.localData.scheduledReports) this.localData.scheduledReports = [];
+          if (!this.localData.marketSkills) this.localData.marketSkills = [];
           this.saveLocalDB();
         }
         console.log('✅ Loaded data from local JSON database.');
@@ -144,7 +155,8 @@ class DatabaseAdapter {
         hiringDrives: [],
         recruitmentCandidates: [],
         auditLogs: [],
-        scheduledReports: []
+        scheduledReports: [],
+        marketSkills: []
       };
     }
   }
@@ -165,7 +177,8 @@ class DatabaseAdapter {
       hiringDrives: [],
       recruitmentCandidates: [],
       auditLogs: [],
-      scheduledReports: []
+      scheduledReports: [],
+      marketSkills: []
     };
     this.saveLocalDB();
     console.log('✅ Local database reset to initial seed data.');
@@ -224,7 +237,8 @@ class DatabaseAdapter {
       hiringDrives: [],
       recruitmentCandidates: [],
       auditLogs: [],
-      scheduledReports: []
+      scheduledReports: [],
+      marketSkills: []
     };
     this.saveLocalDB();
     console.log('✅ Local database reset to initial seed data.');
@@ -295,6 +309,25 @@ class DatabaseAdapter {
       }
     }
     return false;
+  }
+
+  public async getMarketSkills(): Promise<MarketSkill[]> {
+    if (this.isSupabaseEnabled && this.supabaseClient) {
+      const { data, error } = await this.supabaseClient.from('market_skills').select('*');
+      if (!error && data) return data as MarketSkill[];
+    }
+    return this.localData?.marketSkills || [];
+  }
+
+  public async saveMarketSkills(skills: MarketSkill[]): Promise<void> {
+    if (this.isSupabaseEnabled && this.supabaseClient) {
+      const { error } = await this.supabaseClient.from('market_skills').upsert(skills);
+      if (error) console.warn('Supabase error saving market skills:', error);
+    }
+    if (this.localData) {
+      this.localData.marketSkills = skills;
+      this.saveLocalDB();
+    }
   }
 
   public async getAuditLogs(filters?: { dateRange?: [string, string], actor?: string, action?: string, target?: string }): Promise<AuditLog[]> {

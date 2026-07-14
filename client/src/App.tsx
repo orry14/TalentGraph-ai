@@ -11,15 +11,23 @@ import { SkillGraph } from './pages/SkillGraph';
 import { TalentNetwork } from './pages/TalentNetwork';
 import { Projects } from './pages/Projects';
 import { Recruitment } from './pages/Recruitment';
+import { Onboarding } from './pages/Onboarding';
+import { Marketplace } from './pages/Marketplace';
+import { Reports } from './pages/Reports';
 import { AuditLogs } from './pages/AuditLogs';
 import { Settings } from './pages/Settings';
-import { CommandCenter } from './pages/CommandCenter';
+import { ImportWizard } from './pages/Settings/ImportWizard';
+import { SkillConnect } from './pages/SkillConnect';
 import { api, Employee, Project, DashboardStats, SkillGapReport } from './utils/api';
 import { SkeletonTable } from './components/LoadingSkeleton';
+import { SnippingTool } from './components/SnippingTool';
 
 function AppContent() {
   const { isAuthenticated, loading: authLoading } = useAuth();
-  const [activeTab, setActiveTab] = useState('command-center');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Snipping Tool State
+  const [pendingScreenshot, setPendingScreenshot] = useState<string | null>(null);
   
   // App Core Data State
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -58,6 +66,22 @@ function AppContent() {
     }
   }, [isAuthenticated]);
 
+  // Listen to hash changes to update activeTab
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        setActiveTab(hash);
+      }
+    };
+    
+    // Check initial hash
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   // Reset database back to seed template
   const handleResetDB = async () => {
     if (!window.confirm('Are you sure you want to reset the database to initial template values? This will wipe uploaded records.')) return;
@@ -76,8 +100,8 @@ function AppContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="h-6 w-6 rounded-full border-2 border-slate-700 border-t-blue-500 animate-spin" />
+      <div className="min-h-screen bg-[var(--bg-surface)] flex items-center justify-center">
+        <div className="h-6 w-6 rounded-full border-2 border-[var(--border-strong)] border-t-blue-500 animate-spin" />
       </div>
     );
   }
@@ -94,8 +118,6 @@ function AppContent() {
     }
 
     switch (activeTab) {
-      case 'command-center':
-        return <CommandCenter />;
       case 'dashboard':
         return stats ? <Dashboard stats={stats} setActiveTab={setActiveTab} /> : null;
       case 'employees':
@@ -112,16 +134,26 @@ function AppContent() {
         return <Projects />;
       case 'recruitment':
         return <Recruitment />;
+      case 'onboarding':
+        return <Onboarding />;
+      case 'marketplace':
+        return <Marketplace />;
       case 'gap-analysis':
         return gapReport ? <GapAnalysis report={gapReport} /> : null;
+      case 'reports':
+        return <Reports />;
       case 'skill-graph':
         return <SkillGraph employees={employees} projects={projects} />;
       case 'talent-network':
-        return <TalentNetwork />;
+        return <TalentNetwork setActiveTab={setActiveTab} />;
+      case 'skill-connect':
+        return <SkillConnect />;
       case 'audit-logs':
         return <AuditLogs />;
       case 'settings':
         return <Settings />;
+      case 'settings-import':
+        return <ImportWizard />;
       default:
         return stats ? <Dashboard stats={stats} /> : null;
     }
@@ -138,7 +170,14 @@ function AppContent() {
       {renderContent()}
       
       {/* Global Floating AI Copilot */}
-      <ChatBot setActiveTab={setActiveTab} />
+      <ChatBot 
+        setActiveTab={setActiveTab} 
+        pendingScreenshot={pendingScreenshot}
+        clearPendingScreenshot={() => setPendingScreenshot(null)}
+      />
+      
+      {/* Global Snipping Tool for AI Vision */}
+      <SnippingTool onCapture={setPendingScreenshot} />
     </Layout>
   );
 }

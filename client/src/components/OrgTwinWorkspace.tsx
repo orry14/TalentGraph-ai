@@ -258,12 +258,12 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         data: {
           label: (
             <div className="text-left">
-              <div className="font-extrabold text-[11px] text-text-primary flex items-center justify-between">
+              <div className="font-semibold text-[12px] text-[var(--text-primary)] flex items-center justify-between">
                 <span>{manager.name}</span>
                 {isBroken && <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />}
               </div>
-              <div className="text-[9px] text-text-secondary mt-0.5">{manager.role}</div>
-              <div className="text-[8px] text-brand font-bold uppercase mt-1">{manager.department}</div>
+              <div className="text-[12px] text-[var(--text-secondary)] mt-0.5">{manager.role}</div>
+              <div className="text-[12px] text-[var(--accent)] font-bold uppercase mt-1">{manager.department}</div>
             </div>
           )
         },
@@ -273,7 +273,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
           color: 'var(--text-primary)',
           border: isBroken ? '2px solid var(--danger)' : '1.5px solid var(--border-strong)',
           borderRadius: '12px',
-          boxShadow: isBroken ? '0 0 0 4px var(--danger-tint)' : 'var(--shadow-card)',
+          boxShadow: isBroken ? '0 0 0 4px var(--danger-tint)' : 'var(--shadow-sm)',
           width: 170
         }
       });
@@ -337,15 +337,15 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
       if (n.type === 'skill') {
         border = 'var(--success)';
-        shadow = 'var(--shadow-card)';
+        shadow = 'var(--shadow-sm)';
         bgLabel = 'Skill';
       } else if (n.type === 'project') {
         border = 'var(--brand)';
-        shadow = 'var(--shadow-card)';
+        shadow = 'var(--shadow-sm)';
         bgLabel = 'Project';
       } else if (n.type === 'client') {
         border = 'var(--ai-accent)';
-        shadow = 'var(--shadow-card)';
+        shadow = 'var(--shadow-sm)';
         bgLabel = 'Client';
       }
 
@@ -359,9 +359,9 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         data: {
           label: (
             <div className="text-left">
-              <div className="font-extrabold text-[11px] text-text-primary">{n.label}</div>
-              {n.role && <div className="text-[9px] text-text-secondary mt-0.5">{n.role}</div>}
-              <div className="text-[7px] uppercase font-black text-text-muted mt-1 block">{bgLabel}</div>
+              <div className="font-semibold text-[12px] text-[var(--text-primary)]">{n.label}</div>
+              {n.role && <div className="text-[12px] text-[var(--text-secondary)] mt-0.5">{n.role}</div>}
+              <div className="text-[7px] uppercase font-bold text-[var(--text-tertiary)] mt-1 block">{bgLabel}</div>
             </div>
           )
         },
@@ -384,7 +384,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         target: e.target,
         animated: true,
         label: e.label,
-        labelStyle: { fill: '#94a3b8', fontSize: 7, fontWeight: 700, background: 'transparent' },
+        labelStyle: { fill: '#8A8F98', fontSize: 7, fontWeight: 700, background: 'transparent' },
         style: { stroke: 'var(--border-strong)' }
       });
     });
@@ -406,8 +406,8 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         data: {
           label: (
             <div>
-              <div className="font-extrabold text-[10px] text-text-primary">{emp.name}</div>
-              <div className="text-[8px] text-text-secondary">{emp.role}</div>
+              <div className="font-semibold text-[12px] text-[var(--text-primary)]">{emp.name}</div>
+              <div className="text-[12px] text-[var(--text-secondary)]">{emp.role}</div>
             </div>
           )
         },
@@ -423,7 +423,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         data: {
           label: (
             <div>
-              <div className="font-bold text-[9px] text-text-primary">{skill}</div>
+              <div className="font-bold text-[12px] text-[var(--text-primary)]">{skill}</div>
             </div>
           )
         },
@@ -465,13 +465,13 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col space-y-6 overflow-hidden">
       {/* Legend & Navigation Tab Bar */}
-      <GlassCard glow className="bg-surface-card border-border flex items-center justify-between shrink-0 p-4 gap-4">
+      <GlassCard glow className="bg-[var(--bg-surface)] border-[var(--border-default)] flex items-center justify-between shrink-0 p-4 gap-4">
         <div className="flex items-center space-x-6">
-          <div className="flex bg-surface-card border border-border p-1 rounded-xl">
+          <div className="flex bg-[var(--bg-surface)] border border-[var(--border-default)] p-1 rounded-xl">
             <button
               onClick={() => { setActiveSubTab('twin'); resetSimulation(); }}
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
-                activeSubTab === 'twin' ? 'bg-brand text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                activeSubTab === 'twin' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <GitBranch className="w-3.5 h-3.5" />
@@ -480,7 +480,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
             <button
               onClick={() => setActiveSubTab('knowledge')}
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
-                activeSubTab === 'knowledge' ? 'bg-brand text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                activeSubTab === 'knowledge' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Search className="w-3.5 h-3.5" />
@@ -489,7 +489,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
             <button
               onClick={() => setActiveSubTab('skills')}
               className={`px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-2 ${
-                activeSubTab === 'skills' ? 'bg-brand text-white shadow-md' : 'text-text-secondary hover:text-text-primary'
+                activeSubTab === 'skills' ? 'bg-[var(--accent)] text-white shadow-md' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
@@ -502,12 +502,12 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
         {activeSubTab === 'twin' && (
           <div className="flex items-center gap-3">
             {isSimulating ? (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-ai-tint border border-ai-accent/20 text-ai-accent rounded-full text-[10px] font-bold uppercase tracking-wider animate-pulse">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-ai-tint border border-ai-accent/20 text-ai-accent rounded-full text-[12px] font-bold uppercase tracking-wider animate-pulse">
                 <AlertTriangle className="w-3 h-3" />
                 Simulation Active (In Memory)
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 px-3 py-1 bg-success-tint border border-success/20 text-success rounded-full text-[10px] font-bold uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 px-3 py-1 bg-success-tint border border-success/20 text-success rounded-full text-[12px] font-bold uppercase tracking-wider">
                 <CheckCircle2 className="w-3 h-3" />
                 Linked to Live Data
               </div>
@@ -520,7 +520,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
       <div className="flex-1 flex gap-6 overflow-hidden">
         
         {/* Left Side: Dynamic Visualization Viewport */}
-        <div className="flex-1 bg-surface-sunken rounded-3xl overflow-hidden relative border border-border">
+        <div className="flex-1 bg-[var(--bg-canvas)] rounded-3xl overflow-hidden relative border border-[var(--border-default)]">
           <ReactFlow
             nodes={
               activeSubTab === 'twin' ? twinGraph.nodes : 
@@ -565,22 +565,22 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
               {/* Simulation Playground Controls */}
               <GlassCard className="space-y-4">
                 <div>
-                  <h4 className="font-outfit font-bold text-sm text-text-primary flex items-center gap-2">
+                  <h4 className="font-outfit font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
                     <Activity className="w-4 h-4 text-ai-accent" />
                     Sandbox Simulation Panel
                   </h4>
-                  <p className="text-[10px] text-text-muted mt-0.5">Model workforce transformations without production impact.</p>
+                  <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">Model workforce transformations without production impact.</p>
                 </div>
 
-                <div className="space-y-3.5 border-t border-border pt-3">
+                <div className="space-y-3.5 border-t border-[var(--border-default)] pt-3">
                   {/* Resignation */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-text-muted uppercase">Simulate Resignation</label>
+                    <label className="text-[12px] font-bold text-[var(--text-tertiary)] uppercase">Simulate Resignation</label>
                     <div className="flex gap-2">
                       <select
                         value={resignationId}
                         onChange={e => setResignationId(e.target.value)}
-                        className="flex-1 bg-surface-sunken border border-border rounded-lg text-xs p-1.5 text-text-primary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-xs p-1.5 text-[var(--text-primary)]"
                       >
                         <option value="">Select Employee</option>
                         {simulatedEmployees.map(e => (
@@ -590,7 +590,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                       <button
                         onClick={() => simulateResignation(resignationId)}
                         disabled={!resignationId}
-                        className="p-1.5 bg-danger-tint hover:bg-red-600/40 border border-danger/20 text-danger text-xs rounded-lg transition-colors font-bold disabled:opacity-50"
+                        className="p-1.5 bg-[var(--red-soft)] hover:bg-red-600/40 border border-[var(--red)]/20 text-[var(--red)] text-xs rounded-lg transition-colors font-bold disabled:opacity-50"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -599,12 +599,12 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
                   {/* Transfer / Manager Assignment */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-text-muted uppercase">Transfer Employee</label>
+                    <label className="text-[12px] font-bold text-[var(--text-tertiary)] uppercase">Transfer Employee</label>
                     <div className="flex gap-2">
                       <select
                         value={transferEmpId}
                         onChange={e => setTransferEmpId(e.target.value)}
-                        className="flex-1 bg-surface-sunken border border-border rounded-lg text-xs p-1.5 text-text-primary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-xs p-1.5 text-[var(--text-primary)]"
                       >
                         <option value="">Select Employee</option>
                         {simulatedEmployees.map(e => (
@@ -614,7 +614,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                       <select
                         value={transferTargetId}
                         onChange={e => setTransferTargetId(e.target.value)}
-                        className="flex-1 bg-surface-sunken border border-border rounded-lg text-xs p-1.5 text-text-primary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-xs p-1.5 text-[var(--text-primary)]"
                       >
                         <option value="">Target Manager</option>
                         {simulatedEmployees.filter(e => e.id !== transferEmpId).map(e => (
@@ -624,7 +624,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                       <button
                         onClick={() => simulateTransfer(transferEmpId, transferTargetId)}
                         disabled={!transferEmpId || !transferTargetId}
-                        className="p-1.5 bg-brand/20 hover:bg-brand/40 border border-brand/20 text-brand text-xs rounded-lg transition-colors font-bold disabled:opacity-50"
+                        className="p-1.5 bg-[var(--accent)]/20 hover:bg-[var(--accent)]/40 border border-[var(--accent)]/20 text-[var(--accent)] text-xs rounded-lg transition-colors font-bold disabled:opacity-50"
                       >
                         <Shuffle className="w-4 h-4" />
                       </button>
@@ -633,12 +633,12 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
                   {/* Layoffs by Dept */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-text-muted uppercase">Layoff Department</label>
+                    <label className="text-[12px] font-bold text-[var(--text-tertiary)] uppercase">Layoff Department</label>
                     <div className="flex gap-2">
                       <select
                         value={layoffDept}
                         onChange={e => setLayoffDept(e.target.value)}
-                        className="flex-1 bg-surface-sunken border border-border rounded-lg text-xs p-1.5 text-text-primary"
+                        className="flex-1 bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-lg text-xs p-1.5 text-[var(--text-primary)]"
                       >
                         <option value="Engineering">Engineering</option>
                         <option value="Data Science">Data Science</option>
@@ -647,7 +647,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                       </select>
                       <button
                         onClick={() => simulateLayoffs(layoffDept)}
-                        className="px-3 py-1.5 bg-danger-tint hover:bg-red-600/40 border border-danger/20 text-danger text-xs rounded-lg transition-colors font-bold"
+                        className="px-3 py-1.5 bg-[var(--red-soft)] hover:bg-red-600/40 border border-[var(--red)]/20 text-[var(--red)] text-xs rounded-lg transition-colors font-bold"
                       >
                         Execute
                       </button>
@@ -656,7 +656,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
                   {/* Budget Reduction */}
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-bold text-text-muted uppercase">Cut Budgets</label>
+                    <label className="text-[12px] font-bold text-[var(--text-tertiary)] uppercase">Cut Budgets</label>
                     <div className="flex gap-2 items-center">
                       <input
                         type="range"
@@ -666,7 +666,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                         onChange={e => setBudgetReductionPct(parseInt(e.target.value))}
                         className="flex-1"
                       />
-                      <span className="text-xs text-text-primary font-bold w-8">{budgetReductionPct}%</span>
+                      <span className="text-xs text-[var(--text-primary)] font-bold w-8">{budgetReductionPct}%</span>
                       <button
                         onClick={() => simulateBudgetReduction(budgetReductionPct)}
                         className="px-3 py-1.5 bg-ai-tint hover:bg-orange-600/40 border border-ai-accent/20 text-ai-accent text-xs rounded-lg transition-colors font-bold"
@@ -688,7 +688,7 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                     <button
                       onClick={resetSimulation}
                       disabled={!isSimulating}
-                      className="py-2 bg-slate-800 hover:bg-slate-700 text-text-primary text-xs font-bold rounded-xl transition-all disabled:opacity-50"
+                      className="py-2 bg-[var(--bg-surface-alt)] hover:bg-slate-700 text-[var(--text-primary)] text-xs font-bold rounded-xl transition-all disabled:opacity-50"
                     >
                       Reset Twin
                     </button>
@@ -698,41 +698,41 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
               {/* Dynamic Simulation Metrics */}
               <GlassCard>
-                <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider mb-3">Recalculated Org Metrics</h4>
+                <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-3">Recalculated Org Metrics</h4>
                 <div className="space-y-3.5 text-xs">
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Capability Index</span>
-                    <span className="font-bold text-text-primary">{metrics.capabilityScore}%</span>
+                    <span className="text-[var(--text-secondary)]">Capability Index</span>
+                    <span className="font-bold text-[var(--text-primary)]">{metrics.capabilityScore}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Skill Coverage</span>
-                    <span className="font-bold text-text-primary">{metrics.skillCoverage}%</span>
+                    <span className="text-[var(--text-secondary)]">Skill Coverage</span>
+                    <span className="font-bold text-[var(--text-primary)]">{metrics.skillCoverage}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Project Health</span>
+                    <span className="text-[var(--text-secondary)]">Project Health</span>
                     <span className="font-bold text-success">{metrics.projectHealth}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Bench Strength</span>
+                    <span className="text-[var(--text-secondary)]">Bench Strength</span>
                     <span className="font-bold text-violet-400">{metrics.benchStrength}%</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Total Workstream Budgets</span>
-                    <span className="font-bold text-text-primary">${metrics.budget.toLocaleString()}</span>
+                    <span className="text-[var(--text-secondary)]">Total Workstream Budgets</span>
+                    <span className="font-bold text-[var(--text-primary)]">${metrics.budget.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Resource Utilization</span>
-                    <span className="font-bold text-brand">{metrics.utilization}%</span>
+                    <span className="text-[var(--text-secondary)]">Resource Utilization</span>
+                    <span className="font-bold text-[var(--accent)]">{metrics.utilization}%</span>
                   </div>
                 </div>
 
                 {/* Recommendations */}
                 {metrics.recommendations.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border space-y-2">
-                    <span className="text-[9px] uppercase font-bold text-ai-accent block tracking-wider">AI Mitigation Actions</span>
+                  <div className="mt-4 pt-4 border-t border-[var(--border-default)] space-y-2">
+                    <span className="text-[12px] uppercase font-bold text-ai-accent block tracking-wider">AI Mitigation Actions</span>
                     <div className="space-y-1">
                       {metrics.recommendations.map((r, i) => (
-                        <div key={i} className="text-[10px] text-text-secondary flex items-start gap-1">
+                        <div key={i} className="text-[12px] text-[var(--text-secondary)] flex items-start gap-1">
                           <span className="text-ai-accent shrink-0 mt-0.5">•</span>
                           <span>{r}</span>
                         </div>
@@ -747,11 +747,11 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
           {activeSubTab === 'knowledge' && (
             <GlassCard className="space-y-4">
               <div>
-                <h4 className="font-outfit font-bold text-sm text-text-primary flex items-center gap-2">
-                  <Search className="w-4 h-4 text-brand" />
+                <h4 className="font-outfit font-bold text-sm text-[var(--text-primary)] flex items-center gap-2">
+                  <Search className="w-4 h-4 text-[var(--accent)]" />
                   Semantic Graph Search
                 </h4>
-                <p className="text-[10px] text-text-muted mt-0.5">Explore relations semantically across standard entities.</p>
+                <p className="text-[12px] text-[var(--text-tertiary)] mt-0.5">Explore relations semantically across standard entities.</p>
               </div>
 
               <form onSubmit={handleKgSearch} className="space-y-2">
@@ -760,26 +760,26 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
                   placeholder="e.g. 'Who knows React?' or 'Banking'"
                   value={kgQuery}
                   onChange={e => setKgQuery(e.target.value)}
-                  className="w-full bg-surface-sunken border border-border rounded-xl text-xs p-2.5 text-text-primary placeholder:text-text-muted"
+                  className="w-full bg-[var(--bg-canvas)] border border-[var(--border-default)] rounded-xl text-xs p-2.5 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
                 />
                 <button
                   type="submit"
                   disabled={kgLoading || !kgQuery.trim()}
-                  className="w-full py-2 bg-brand hover:bg-brand-hover text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-xl text-xs font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {kgLoading ? 'Searching...' : <>Query Knowledge Graph <Sparkles className="w-3.5 h-3.5" /></>}
                 </button>
               </form>
 
               {/* Sample queries helper */}
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <span className="text-[9px] font-bold text-text-muted uppercase tracking-wide block">Try Queries</span>
+              <div className="space-y-1.5 pt-2 border-t border-[var(--border-default)]">
+                <span className="text-[12px] font-bold text-[var(--text-tertiary)] uppercase tracking-wide block">Try Queries</span>
                 <div className="flex flex-wrap gap-1.5">
                   {['React', 'AWS', 'Banking', 'Sarah'].map(q => (
                     <button
                       key={q}
                       onClick={() => { setKgQuery(`Who knows ${q} / has worked with ${q}`); }}
-                      className="text-[9px] font-semibold px-2 py-1 bg-surface-card border border-border text-text-secondary rounded-lg hover:border-indigo-500/20 hover:text-text-primary"
+                      className="text-[12px] font-semibold px-2 py-1 bg-[var(--bg-surface)] border border-[var(--border-default)] text-[var(--text-secondary)] rounded-lg hover:border-indigo-500/20 hover:text-[var(--text-primary)]"
                     >
                       {q}
                     </button>
@@ -791,39 +791,39 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
 
           {/* Node detail display card (if selected) */}
           {selectedNodeData && (
-            <GlassCard className="border-brand/20 bg-brand-tint">
-              <h4 className="font-outfit font-bold text-xs text-text-secondary uppercase tracking-wider mb-3">Selected Node Details</h4>
+            <GlassCard className="border-[var(--accent)]/20 bg-[var(--accent-soft)]">
+              <h4 className="font-outfit font-bold text-xs text-[var(--text-secondary)] uppercase tracking-wider mb-3">Selected Node Details</h4>
               {selectedNodeData.type === 'employee' ? (
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Name:</span>
-                    <span className="font-bold text-text-primary">{selectedNodeData.data.name}</span>
+                    <span className="text-[var(--text-secondary)] font-medium">Name:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{selectedNodeData.data.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Role:</span>
-                    <span className="font-medium text-text-primary">{selectedNodeData.data.role}</span>
+                    <span className="text-[var(--text-secondary)] font-medium">Role:</span>
+                    <span className="font-medium text-[var(--text-primary)]">{selectedNodeData.data.role}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Rating:</span>
-                    <span className="font-bold text-text-primary">{selectedNodeData.data.performanceRating}/5.0</span>
+                    <span className="text-[var(--text-secondary)] font-medium">Rating:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{selectedNodeData.data.performanceRating}/5.0</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Projects:</span>
-                    <span className="font-medium text-text-primary truncate max-w-[200px]">
+                    <span className="text-[var(--text-secondary)] font-medium">Projects:</span>
+                    <span className="font-medium text-[var(--text-primary)] truncate max-w-[200px]">
                       {selectedNodeData.data.currentProjects.join(', ') || 'Bench'}
                     </span>
                   </div>
                   {/* Actions for employee */}
-                  <div className="pt-2 border-t border-border flex justify-end gap-2">
+                  <div className="pt-2 border-t border-[var(--border-default)] flex justify-end gap-2">
                     <button
                       onClick={() => simulateResignation(selectedNodeData.data.id)}
-                      className="px-2.5 py-1 bg-danger-tint hover:bg-red-600/40 text-danger text-[10px] font-bold rounded-lg border border-red-500/20 transition-colors"
+                      className="px-2.5 py-1 bg-[var(--red-soft)] hover:bg-red-600/40 text-[var(--red)] text-[12px] font-bold rounded-lg border border-red-500/20 transition-colors"
                     >
                       Resign
                     </button>
                     <button
                       onClick={() => simulatePromotion(selectedNodeData.data.id)}
-                      className="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-success text-[10px] font-bold rounded-lg border border-success/20 transition-colors"
+                      className="px-2.5 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-success text-[12px] font-bold rounded-lg border border-success/20 transition-colors"
                     >
                       Promote
                     </button>
@@ -832,14 +832,14 @@ export const OrgTwinWorkspace: React.FC<OrgTwinWorkspaceProps> = ({ employees: i
               ) : (
                 <div className="space-y-2 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Project Name:</span>
-                    <span className="font-bold text-text-primary">{selectedNodeData.data.name}</span>
+                    <span className="text-[var(--text-secondary)] font-medium">Project Name:</span>
+                    <span className="font-bold text-[var(--text-primary)]">{selectedNodeData.data.name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-text-secondary font-medium">Budget:</span>
-                    <span className="font-bold text-text-primary">${(selectedNodeData.data.budget || 80000).toLocaleString()}</span>
+                    <span className="text-[var(--text-secondary)] font-medium">Budget:</span>
+                    <span className="font-bold text-[var(--text-primary)]">${(selectedNodeData.data.budget || 80000).toLocaleString()}</span>
                   </div>
-                  <p className="text-[10px] text-text-secondary italic">"{selectedNodeData.data.description}"</p>
+                  <p className="text-[12px] text-[var(--text-secondary)] italic">"{selectedNodeData.data.description}"</p>
                 </div>
               )}
             </GlassCard>

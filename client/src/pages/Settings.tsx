@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { api, ScheduledReport } from '../utils/api';
+import { api, ScheduledReport, ImportLog } from '../utils/api';
 import { GlassCard } from '../components/GlassCard';
-import { Calendar, Trash2, ShieldAlert, Plus, Check, Settings as SettingsIcon, Bell, Users, Lock, Database } from 'lucide-react';
+import { Calendar, Trash2, ShieldAlert, Plus, Check, Download, AlertCircle, FileText, ChevronRight } from 'lucide-react';
 
 export const Settings: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'automations' | 'data'>('data');
   const [reports, setReports] = useState<ScheduledReport[]>([]);
+  const [importLogs, setImportLogs] = useState<ImportLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('automation');
   
   // Form State
   const [reportType, setReportType] = useState('dashboard');
@@ -16,16 +17,20 @@ export const Settings: React.FC = () => {
   const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    fetchSchedules();
+    fetchData();
   }, []);
 
-  const fetchSchedules = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      const data = await api.getScheduledReports();
-      setReports(data);
+      const [reportsData, logsData] = await Promise.all([
+        api.getScheduledReports(),
+        api.getImportLogs()
+      ]);
+      setReports(reportsData);
+      setImportLogs(logsData);
     } catch (err) {
-      console.error('Failed to load scheduled reports:', err);
+      console.error('Failed to load settings data:', err);
     } finally {
       setLoading(false);
     }
@@ -40,14 +45,16 @@ export const Settings: React.FC = () => {
     try {
       const recipientList = recipients.split(',').map(email => email.trim()).filter(Boolean);
       await api.createScheduledReport({
-        report_type: reportType,
+        type: reportType as any,
         frequency,
-        recipient_emails: recipientList,
-        filters: {} // Generic empty filters for default scheduled reports
+        recipients: recipientList,
+        format: 'pdf',
+        status: 'active',
+        nextRun: new Date().toISOString()
       });
       setSuccess(true);
       setRecipients('');
-      fetchSchedules();
+      fetchData();
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
       console.error('Failed to create scheduled report:', err);
@@ -69,85 +76,132 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const navigateToImportWizard = () => {
+    window.location.hash = 'settings-import';
+  };
+
   return (
-    <div className="flex gap-8 h-[calc(100vh-140px)]">
-      
-      {/* Left Navigation Pane */}
-      <div className="w-64 shrink-0 flex flex-col space-y-1">
-        <h2 className="text-lg font-bold text-text-primary px-3 mb-4">Platform Settings</h2>
-        
-        <button
-          onClick={() => setActiveTab('general')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'general' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
+    <div className="space-y-8 p-8 max-w-[1200px] mx-auto animate-in fade-in">
+      <div>
+        <h1 className="text-2xl font-bold text-[var(--text-primary)]">Platform Settings</h1>
+        <p className="text-[var(--text-secondary)]">Manage your workspace configuration and data imports.</p>
+      </div>
+
+      <div className="flex border-b border-[var(--border-subtle)] gap-6">
+        <button 
+          onClick={() => setActiveTab('data')}
+          className={`pb-3 text-[14px] font-medium transition-colors border-b-2 ${activeTab === 'data' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
-          <SettingsIcon className="w-4 h-4" /> General
+          Data & Imports
         </button>
-        <button
-          onClick={() => setActiveTab('automation')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'automation' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
+        <button 
+          onClick={() => setActiveTab('automations')}
+          className={`pb-3 text-[14px] font-medium transition-colors border-b-2 ${activeTab === 'automations' ? 'border-[var(--accent)] text-[var(--accent)]' : 'border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
         >
-          <Calendar className="w-4 h-4" /> Automations & Reports
-        </button>
-        <button
-          onClick={() => setActiveTab('notifications')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'notifications' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
-        >
-          <Bell className="w-4 h-4" /> Notifications
-        </button>
-        <button
-          onClick={() => setActiveTab('team')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'team' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
-        >
-          <Users className="w-4 h-4" /> Team & Roles
-        </button>
-        <button
-          onClick={() => setActiveTab('security')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'security' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
-        >
-          <Lock className="w-4 h-4" /> Security
-        </button>
-        <button
-          onClick={() => setActiveTab('integrations')}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'integrations' ? 'bg-brand-tint text-brand' : 'text-text-secondary hover:bg-surface-sunken hover:text-text-primary'
-          }`}
-        >
-          <Database className="w-4 h-4" /> Integrations
+          Automations
         </button>
       </div>
 
-      {/* Right Content Pane */}
-      <div className="flex-1 overflow-y-auto pr-2">
-        {activeTab === 'automation' ? (
-          <div className="space-y-6 max-w-4xl">
+      {activeTab === 'data' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-[var(--bg-surface)] p-6 rounded-xl border border-[var(--border-default)]">
             <div>
-              <h3 className="text-xl font-bold text-text-primary">Automations & Reports</h3>
-              <p className="text-sm text-text-secondary mt-1">Configure scheduled data exports and platform scheduler rules.</p>
+              <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[var(--accent)]" /> Bulk Data Import
+              </h3>
+              <p className="text-[13px] text-[var(--text-secondary)] mt-1 max-w-md">
+                Import employees, candidates, and projects from a CSV or Excel file. Our mapping wizard handles standard ATS and HRIS exports.
+              </p>
             </div>
+            <button 
+              onClick={navigateToImportWizard}
+              className="bg-[var(--accent)] text-white px-5 py-2.5 rounded-lg font-medium text-[14px] hover:bg-[var(--accent-hover)] transition-colors shadow-sm flex items-center gap-2"
+            >
+              Start Import Wizard <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
 
+          <GlassCard className="p-6">
+            <h3 className="text-[16px] font-bold text-[var(--text-primary)] mb-4">Import History</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-[var(--border-subtle)] bg-[var(--bg-canvas)]">
+                    <th className="px-4 py-3 text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Date</th>
+                    <th className="px-4 py-3 text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">File</th>
+                    <th className="px-4 py-3 text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-[12px] font-semibold text-[var(--text-secondary)] uppercase tracking-wider text-right">Summary</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-subtle)]">
+                  {importLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-[var(--bg-canvas)] transition-colors">
+                      <td className="px-4 py-4 text-[13px] text-[var(--text-secondary)] whitespace-nowrap">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </td>
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-[13px] text-[var(--text-primary)]">{log.fileName}</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)]">by {log.uploadedBy}</p>
+                      </td>
+                      <td className="px-4 py-4 font-medium text-[13px] text-[var(--text-primary)]">
+                        {log.dataType}
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider ${
+                          log.status === 'completed' ? 'bg-[var(--green-soft)] text-[var(--green)]' :
+                          log.status === 'completed_with_errors' ? 'bg-[var(--amber-soft)] text-[var(--amber)]' :
+                          'bg-[var(--bg-surface-alt)] text-[var(--text-secondary)]'
+                        }`}>
+                          {log.status.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-right">
+                        <div className="flex flex-col items-end gap-1">
+                          <span className="text-[13px] font-medium text-[var(--text-primary)]">
+                            {log.importedCount} / {log.totalRows} imported
+                          </span>
+                          {log.failedCount > 0 && (
+                            <button className="text-[11px] font-medium text-[var(--red)] flex items-center gap-1 hover:underline">
+                              <Download className="w-3 h-3" /> Error Report ({log.failedCount})
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {importLogs.length === 0 && !loading && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-12 text-center text-[var(--text-secondary)] text-[13px] border border-dashed border-[var(--border-strong)] rounded-xl mt-4">
+                        No imports have been processed yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
+      {activeTab === 'automations' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Create Schedule Card */}
+          <div className="lg:col-span-1">
             <GlassCard className="p-6">
-              <h4 className="font-semibold text-sm text-text-primary mb-4 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-brand" />
+              <h3 className="text-md font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-blue-400" />
                 Schedule Automated Report
-              </h4>
+              </h3>
               
-              <form onSubmit={handleCreateReport} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+              <form onSubmit={handleCreateReport} className="space-y-4">
                 <div>
-                  <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5 block">Report Type</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-1 block">Report Type</label>
                   <select
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value)}
-                    className="w-full bg-surface-sunken border border-border rounded-md text-xs text-text-primary py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl text-xs text-[var(--text-primary)] py-2.5 px-3 focus:outline-none focus:border-blue-500/50"
                   >
                     <option value="dashboard">Executive Dashboard Summary</option>
                     <option value="employees">Employee Workspace Directory</option>
@@ -156,90 +210,91 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5 block">Frequency</label>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-1 block">Frequency</label>
                   <select
                     value={frequency}
                     onChange={(e) => setFrequency(e.target.value as 'weekly' | 'monthly')}
-                    className="w-full bg-surface-sunken border border-border rounded-md text-xs text-text-primary py-2.5 px-3 focus:outline-none focus:ring-1 focus:ring-brand"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl text-xs text-[var(--text-primary)] py-2.5 px-3 focus:outline-none focus:border-blue-500/50"
                   >
                     <option value="weekly">Weekly Export</option>
                     <option value="monthly">Monthly Export</option>
                   </select>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5 block">Recipient Emails</label>
+                <div>
+                  <label className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider mb-1 block">Recipient Emails</label>
                   <input
                     type="text"
                     placeholder="e.g. manager@workforce.ai, hr@workforce.ai"
                     value={recipients}
                     onChange={(e) => setRecipients(e.target.value)}
                     required
-                    className="w-full bg-surface-sunken border border-border rounded-md text-xs py-2.5 px-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-brand"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl text-xs py-2.5 px-3 text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus:outline-none focus:border-blue-500/50"
                   />
-                  <span className="text-[10px] text-text-muted mt-1.5 block">Separate multiple emails with commas.</span>
+                  <span className="text-[12px] text-[var(--text-tertiary)] mt-1 block">Separate multiple emails with commas.</span>
                 </div>
 
-                <div className="md:col-span-2 mt-2">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-auto px-6 py-2 bg-brand hover:bg-brand-hover text-white rounded-md text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {success ? (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Report Scheduled!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        <span>{saving ? 'Scheduling...' : 'Add Schedule'}</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {success ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Report Scheduled!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      <span>{saving ? 'Scheduling...' : 'Add Schedule'}</span>
+                    </>
+                  )}
+                </button>
               </form>
             </GlassCard>
+          </div>
 
+          {/* Existing Schedules Table */}
+          <div className="lg:col-span-2">
             <GlassCard className="p-6">
-              <h4 className="font-semibold text-sm text-text-primary mb-4">Active Automation Schedules</h4>
+              <h3 className="text-md font-bold text-[var(--text-primary)] mb-4">Active Automation Schedules</h3>
               
               {loading ? (
-                <div className="text-center py-8 text-text-muted text-sm font-medium">Loading active automations...</div>
+                <div className="text-center py-8 text-[var(--text-tertiary)] text-sm">Loading active automations...</div>
               ) : reports.length === 0 ? (
-                <div className="text-center py-8 text-text-muted text-sm font-medium">No active report schedules configured.</div>
+                <div className="text-center py-8 text-[var(--text-tertiary)] text-sm">No active report schedules configured.</div>
               ) : (
-                <div className="overflow-x-auto border border-border rounded-md">
-                  <table className="w-full text-left text-xs bg-surface-card">
-                    <thead className="bg-surface-sunken">
-                      <tr className="text-[11px] text-text-secondary uppercase tracking-wider font-semibold border-b border-border">
-                        <th className="p-3">Report</th>
-                        <th className="p-3">Frequency</th>
-                        <th className="p-3">Recipients</th>
-                        <th className="p-3">Next Scheduled Run</th>
-                        <th className="p-3 w-10"></th>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[var(--border-default)] text-[var(--text-tertiary)] uppercase tracking-wider font-semibold">
+                        <th className="pb-3">Report</th>
+                        <th className="pb-3">Frequency</th>
+                        <th className="pb-3">Recipients</th>
+                        <th className="pb-3">Next Scheduled Run</th>
+                        <th className="pb-3 w-10"></th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-slate-800/40 text-[var(--text-secondary)]">
                       {reports.map((report) => (
-                        <tr key={report.id} className="hover:bg-surface-sunken transition-colors">
-                          <td className="p-3 font-semibold text-text-primary capitalize">
-                            {report.report_type.replace('-', ' ')}
+                        <tr key={report.id} className="hover:bg-[var(--bg-surface)]/10">
+                          <td className="py-4 font-bold text-[var(--text-primary)] capitalize">
+                            {report.type.replace('_', ' ')}
                           </td>
-                          <td className="p-3 font-medium text-text-secondary capitalize">
+                          <td className="py-4 capitalize">
                             {report.frequency}
                           </td>
-                          <td className="p-3 font-mono text-[10px] text-text-secondary">
-                            {report.recipient_emails.join(', ')}
+                          <td className="py-4 font-mono text-[12px]">
+                            {report.recipients.join(', ')}
                           </td>
-                          <td className="p-3 font-medium text-text-secondary">
-                            {new Date(report.next_run_at).toLocaleString()}
+                          <td className="py-4 text-[var(--text-tertiary)]">
+                            {new Date(report.nextRun).toLocaleString()}
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="py-4 text-right">
                             <button
                               onClick={() => handleDeleteReport(report.id)}
-                              className="text-text-muted hover:text-danger transition-colors p-1"
+                              className="text-red-400 hover:text-red-300 transition-colors p-1"
                               title="Cancel Schedule"
                             >
                               <Trash2 size={16} />
@@ -253,16 +308,8 @@ export const Settings: React.FC = () => {
               )}
             </GlassCard>
           </div>
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <SettingsIcon className="w-8 h-8 text-text-muted mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-text-primary">Configuration Pane</h3>
-              <p className="text-xs text-text-secondary mt-1">This section is currently under construction.</p>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

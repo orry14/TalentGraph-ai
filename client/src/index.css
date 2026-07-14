@@ -4,70 +4,56 @@
 
 @layer base {
   :root {
-    --surface-page:      #F6F7F9;   /* app background — soft neutral, not white, not black */
-    --surface-card:       #FFFFFF;   /* cards, panels, table containers */
-    --surface-sunken:     #F0F1F4;   /* table headers, input backgrounds, code/mono blocks */
-    --surface-sidebar:    #FFFFFF;   /* sidebar — same as card, NOT dark, this is the biggest single change */
-    --border:             #E3E5EA;   /* default 1px hairline border, everywhere */
-    --border-strong:      #C9CCD4;   /* hover/focus emphasis */
-    
-    --text-primary:       #14161A;   /* headings, primary content */
-    --text-secondary:     #565B66;   /* supporting text, labels */
-    --text-muted:         #8A8F9C;   /* placeholders, timestamps, disabled */
-    
-    --brand:              #2954E0;   /* primary actions, active nav, links — used sparingly */
-    --brand-hover:        #1E42B8;
-    --brand-tint:         #EBF0FE;   /* light brand backgrounds — active nav pill, selected rows */
-    
-    --ai-accent:          #6D5EF0;   /* reserved exclusively for AI-generated/AI-suggested content — badges, "Sparkles" icons, regenerate actions */
-    --ai-tint:            #F1EFFE;
-    
-    --success:            #167A52;
-    --success-tint:       #E7F5EE;
-    --warning:             #B76E00;
-    --warning-tint:        #FCF1E0;
-    --danger:              #C0342A;
-    --danger-tint:          #FBEBE9;
+    /* Surfaces */
+    --bg-canvas: #F7F8FA;         /* page background */
+    --bg-surface: #FFFFFF;        /* cards, panels, sidebar */
+    --bg-surface-alt: #FAFBFC;    /* subtle zebra / hover rows */
+    --bg-sidebar: #10241E;        /* deep green-black, like Bigin's sidebar */
+    --bg-sidebar-hover: #16332A;
+    --bg-sidebar-active: #1D8A5C1A; /* translucent accent for active nav item */
 
-    --radius-sm: 6px;   /* buttons, inputs, badges */
-    --radius-md: 10px;  /* cards, panels */
-    --shadow-card: 0 1px 2px rgba(20,22,26,0.04), 0 1px 1px rgba(20,22,26,0.03);  /* barely-there, functional only */
+    /* Borders */
+    --border-subtle: #E6E8EB;
+    --border-default: #DADCE0;
+    --border-strong: #C4C7CC;
+
+    /* Text */
+    --text-primary: #1A1D21;
+    --text-secondary: #5F6368;
+    --text-tertiary: #8A8F98;
+    --text-on-dark: #F1F3F2;
+    --text-on-dark-muted: #9DB3AB;
+
+    /* Brand / Accent */
+    --accent: #1D8A5C;            /* primary green, echoes Bigin's brand mark */
+    --accent-hover: #16714A;
+    --accent-soft: #E7F5EE;       /* pill/badge backgrounds */
+    --accent-text: #146B45;
+
+    /* Secondary functional colors (status, not decoration) */
+    --blue: #2E6BE6;
+    --blue-soft: #E8EFFD;
+    --amber: #B5790A;
+    --amber-soft: #FCF1DA;
+    --red: #D6432E;
+    --red-soft: #FBE9E6;
+    --purple: #6B4FBB;
+    --purple-soft: #EFEAFB;
+
+    /* Elevation — flat, not glow */
+    --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+    --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+    --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08);
+
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-pill: 999px;
+
+    /* Type */
+    --font-family: 'Inter', system-ui, sans-serif;
   }
-
-  body {
-    background-color: var(--surface-page);
-    color: var(--text-primary);
-    font-family: 'Inter', sans-serif;
-  }
-}
-
-/* Glassmorphism Panel styles - Removed, replaced by standard flat card */
-.glass-panel {
-  background: var(--surface-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-}
-
-.glass-panel-glow {
-  background: var(--surface-card);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-}
-
-.glass-input {
-  background: var(--surface-sunken);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  transition: all 0.2s ease-in-out;
-}
-
-.glass-input:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 2px var(--brand-tint);
-  outline: none;
 }
 
 /* Scrollbar styling */
@@ -76,8 +62,14 @@
   height: 6px;
 }
 
+/* Global Focus Styles */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
 ::-webkit-scrollbar-track {
-  background: var(--surface-page);
+  background: var(--bg-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
@@ -86,20 +78,20 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
+  background: var(--text-tertiary);
 }
 
 /* React Flow styling overrides */
 .react-flow__node {
-  border-radius: var(--radius-md) !important;
+  border-radius: 12px !important;
   font-family: 'Inter', sans-serif;
 }
 
 .react-flow__handle {
   width: 8px !important;
   height: 8px !important;
-  background-color: var(--brand) !important;
-  border: 2px solid var(--surface-card) !important;
+  background-color: var(--accent) !important;
+  border: 2px solid var(--bg-surface) !important;
 }
 
 .react-flow__edge-path {
@@ -108,32 +100,33 @@
 }
 
 .react-flow__edge.selected .react-flow__edge-path {
-  stroke: var(--brand) !important;
+  stroke: var(--accent) !important;
   stroke-width: 2.5 !important;
 }
 
 .react-flow__controls {
-  background: var(--surface-card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-sm) !important;
-  box-shadow: var(--shadow-card) !important;
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .react-flow__controls-button {
   background: transparent !important;
-  border-bottom: 1px solid var(--border) !important;
+  border-bottom: 1px solid var(--border-subtle) !important;
   fill: var(--text-secondary) !important;
 }
 
 .react-flow__controls-button:hover {
-  background: var(--surface-sunken) !important;
+  background: var(--bg-surface-alt) !important;
   fill: var(--text-primary) !important;
 }
 
-/* Background Grid Overlay - Flat light mode */
+/* Background Grid Overlay */
 .bg-grid-pattern {
   background-size: 50px 50px;
   background-image: 
-    linear-gradient(to right, var(--border) 1px, transparent 1px),
-    linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    linear-gradient(to right, rgba(16, 24, 40, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(16, 24, 40, 0.04) 1px, transparent 1px);
 }
+

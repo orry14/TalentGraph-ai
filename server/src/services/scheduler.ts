@@ -1,6 +1,8 @@
 import cron from 'node-cron';
 import { db, ScheduledReport } from '../db/dbClient.js';
 import { fetchExportData, generateCSV } from '../utils/exporter.js';
+import { marketAnalysisService } from './marketAnalysis.js';
+import { emailService } from './emailService.js';
 
 export const initScheduler = () => {
   console.log('⏰ Initializing Scheduled Reports Cron Job (running every minute)...');
@@ -24,11 +26,15 @@ export const initScheduler = () => {
           
           const csvData = generateCSV(rows);
           
-          console.log(`✉️ [EMAIL STUB] Sending Scheduled Report: "${title}"`);
-          console.log(`   Recipients: ${report.recipient_emails.join(', ')}`);
-          console.log(`   Format: CSV (${csvData.split('\n').length} lines)`);
-          console.log(`   Frequency: ${report.frequency}`);
-          console.log('   --- Note: Prompt 5 will implement real email delivery ---');
+          console.log(`✉️ Sending Scheduled Report: "${title}" via Ethereal`);
+          for (const email of report.recipient_emails) {
+            await emailService.sendDigestEmail(email, {
+              title,
+              frequency: report.frequency,
+              count: rows.length,
+              type: report.report_type
+            });
+          }
           
           // Calculate next run date
           const nextRun = new Date();
@@ -51,6 +57,16 @@ export const initScheduler = () => {
       }
     } catch (err) {
       console.error('[Scheduler] Error scanning scheduled reports:', err);
+    }
+  });
+
+  // Run weekly market analysis on Sunday at midnight
+  cron.schedule('0 0 * * 0', async () => {
+    try {
+      console.log('⏰ [Scheduler] Running weekly market skill analysis...');
+      await marketAnalysisService.runMarketAnalysis();
+    } catch (err) {
+      console.error('[Scheduler] Error running market analysis:', err);
     }
   });
 };

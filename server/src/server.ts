@@ -12,6 +12,7 @@ import { db } from './db/dbClient.js';
 import { aiService } from './services/aiService.js';
 import { analytics } from './services/analytics.js';
 import { riskService } from './services/riskService.js';
+import { marketAnalysisService } from './services/marketAnalysis.js';
 import { simulationEngine } from './services/simulationEngine.js';
 import { conflictResolver } from './services/conflictResolver.js';
 import { optimizationService } from './services/optimizationService.js';
@@ -41,9 +42,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Enable CORS and body parsing
+// Enable CORS and Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Set up file uploading using Multer (in-memory storage)
 const storage = multer.memoryStorage();
@@ -60,7 +62,49 @@ const upload = multer({
   }
 });
 
-// --- API Endpoints ---
+// --- Email Services ---
+import { emailService } from './services/emailService.js';
+
+app.post('/api/email/send', async (req, res) => {
+  try {
+    const { to, subject, body } = req.body;
+    if (!to || !subject || !body) return res.status(400).json({ error: 'Missing email fields' });
+    
+    const previewUrl = await emailService.sendComposerEmail(to, subject, body, true);
+    res.json({ success: true, previewUrl });
+  } catch (err: any) {
+    console.error('Email send error:', err);
+    res.status(500).json({ error: 'Failed to send email' });
+  }
+});
+
+app.post('/api/email/draft', async (req, res) => {
+  try {
+    const { context, intent } = req.body;
+    
+    const prompt = `You are an HR Assistant. Draft a professional email.
+Intent: ${intent}
+Context: ${context}
+
+Format your response strictly as JSON with exactly two keys: "subject" and "body" (where body can contain HTML formatting like <p>, <br>). No markdown wrappers.`;
+
+    const responseText = await groqService.chatCompletion([{ role: 'user', content: prompt }]);
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch (e) {
+      // Fallback
+      parsed = { subject: "Follow up regarding " + intent, body: responseText };
+    }
+    
+    res.json(parsed);
+  } catch (err: any) {
+    console.error('Email draft error:', err);
+    res.status(500).json({ error: 'Failed to draft email' });
+  }
+});
+
+// --- Error Handler ---
 
 /**
  * Reset Database
@@ -626,13 +670,40 @@ app.get('/api/analytics/capability-risks', async (req, res) => {
 });
 
 /**
+ * Get Market Radar Data
+ */
+app.get('/api/market-radar', async (req, res) => {
+  try {
+    const marketSkills = await marketAnalysisService.getMarketSkills();
+    res.status(200).json(marketSkills);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Sync/Refresh Market Radar Data (Manual Trigger)
+ */
+app.post('/api/market-radar/sync', async (req, res) => {
+  try {
+    const marketSkills = await marketAnalysisService.runMarketAnalysis();
+    res.status(200).json(marketSkills);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
  * Create a new project
  */
 app.post('/api/projects', async (req, res) => {
   try {
     const projectData = req.body;
-    if (!projectData.id || !projectData.name) {
-      return res.status(400).json({ error: 'Project id and name are required' });
+    if (!projectData.id) {
+      projectData.id = 'proj-' + Date.now();
+    }
+    if (!projectData.name) {
+      return res.status(400).json({ error: 'Project name is required' });
     }
     const saved = await db.saveProject(projectData);
     res.status(201).json(saved);

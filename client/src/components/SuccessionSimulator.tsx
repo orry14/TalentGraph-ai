@@ -45,21 +45,21 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-[var(--bg-surface-alt)] backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+        className="bg-[var(--bg-surface)] border border-[var(--border-strong)] rounded-3xl w-full max-w-4xl overflow-hidden shadow-md flex flex-col max-h-[90vh]"
       >
-        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+        <div className="p-6 border-b border-[var(--border-default)] flex justify-between items-center bg-[var(--bg-surface-alt)]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
               <Activity className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-xl font-outfit font-bold text-white">AI Career Simulator</h2>
-              <p className="text-sm text-slate-400">Target: {employee.name} ({employee.role})</p>
+              <p className="text-sm text-[var(--text-tertiary)]">Target: {employee.name} ({employee.role})</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -67,19 +67,19 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
               <div className="flex gap-2">
                 <button
                   onClick={() => handleExport('csv')}
-                  className="px-2.5 py-1.5 bg-slate-950/80 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition-all"
+                  className="px-2.5 py-1.5 bg-[var(--bg-surface-alt)] hover:bg-[var(--bg-surface)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] border border-[var(--border-default)] rounded-xl text-xs font-bold transition-all"
                 >
                   Export CSV
                 </button>
                 <button
                   onClick={() => handleExport('pdf')}
-                  className="px-2.5 py-1.5 bg-slate-950/80 hover:bg-slate-950 text-slate-400 hover:text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition-all"
+                  className="px-2.5 py-1.5 bg-[var(--bg-surface-alt)] hover:bg-[var(--bg-surface)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] border border-[var(--border-default)] rounded-xl text-xs font-bold transition-all"
                 >
                   Export PDF
                 </button>
               </div>
             )}
-            <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors text-lg font-bold ml-2">
+            <button onClick={onClose} className="text-[var(--text-tertiary)] hover:text-white transition-colors text-lg font-bold ml-2">
               ✕
             </button>
           </div>
@@ -89,8 +89,8 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
           {!result && (
             <div className="max-w-md mx-auto space-y-6 py-10">
               <div className="text-center">
-                <h3 className="text-lg font-bold text-slate-200 mb-2">Select Simulation Scenario</h3>
-                <p className="text-sm text-slate-500">
+                <h3 className="text-lg font-bold text-[var(--text-primary)] mb-2">Select Simulation Scenario</h3>
+                <p className="text-sm text-[var(--text-tertiary)]">
                   Forecast organizational impact, skill gaps, and successor readiness before making personnel changes.
                 </p>
               </div>
@@ -99,39 +99,39 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
                 <button
                   onClick={() => setAction('promotion')}
                   className={`w-full p-4 rounded-xl border flex items-center gap-4 transition-all ${
-                    action === 'promotion' ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                    action === 'promotion' ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-[var(--bg-surface-alt)]/50 border-[var(--border-strong)] hover:border-slate-600'
                   }`}
                 >
-                  <ArrowUpCircle className={action === 'promotion' ? 'text-emerald-400' : 'text-slate-400'} />
+                  <ArrowUpCircle className={action === 'promotion' ? 'text-emerald-400' : 'text-[var(--text-tertiary)]'} />
                   <div className="text-left">
-                    <h4 className="font-bold text-slate-200">Simulate Promotion</h4>
-                    <p className="text-xs text-slate-500">Promote to next leadership tier</p>
+                    <h4 className="font-bold text-[var(--text-primary)]">Simulate Promotion</h4>
+                    <p className="text-xs text-[var(--text-tertiary)]">Promote to next leadership tier</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => setAction('departure')}
                   className={`w-full p-4 rounded-xl border flex items-center gap-4 transition-all ${
-                    action === 'departure' ? 'bg-red-500/10 border-red-500/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                    action === 'departure' ? 'bg-red-500/10 border-red-500/50' : 'bg-[var(--bg-surface-alt)]/50 border-[var(--border-strong)] hover:border-slate-600'
                   }`}
                 >
-                  <UserMinus className={action === 'departure' ? 'text-red-400' : 'text-slate-400'} />
+                  <UserMinus className={action === 'departure' ? 'text-red-400' : 'text-[var(--text-tertiary)]'} />
                   <div className="text-left">
-                    <h4 className="font-bold text-slate-200">Simulate Resignation</h4>
-                    <p className="text-xs text-slate-500">Employee leaves the company</p>
+                    <h4 className="font-bold text-[var(--text-primary)]">Simulate Resignation</h4>
+                    <p className="text-xs text-[var(--text-tertiary)]">Employee leaves the company</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => setAction('transfer')}
                   className={`w-full p-4 rounded-xl border flex items-center gap-4 transition-all ${
-                    action === 'transfer' ? 'bg-blue-500/10 border-blue-500/50' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                    action === 'transfer' ? 'bg-blue-500/10 border-blue-500/50' : 'bg-[var(--bg-surface-alt)]/50 border-[var(--border-strong)] hover:border-slate-600'
                   }`}
                 >
-                  <Briefcase className={action === 'transfer' ? 'text-blue-400' : 'text-slate-400'} />
+                  <Briefcase className={action === 'transfer' ? 'text-blue-400' : 'text-[var(--text-tertiary)]'} />
                   <div className="text-left">
-                    <h4 className="font-bold text-slate-200">Simulate Transfer</h4>
-                    <p className="text-xs text-slate-500">Move to a different department</p>
+                    <h4 className="font-bold text-[var(--text-primary)]">Simulate Transfer</h4>
+                    <p className="text-xs text-[var(--text-tertiary)]">Move to a different department</p>
                   </div>
                 </button>
               </div>
@@ -155,47 +155,47 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <GlassCard className="text-center">
-                  <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Delta Capability</p>
+                  <p className="text-sm text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Delta Capability</p>
                   <div className="flex items-center justify-center gap-2">
-                    <h3 className={`text-3xl font-black ${result.deltaCapability < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    <h3 className={`text-3xl font-bold ${result.deltaCapability < 0 ? 'text-red-400' : 'text-emerald-400'}`}>
                       {result.deltaCapability > 0 ? '+' : ''}{result.deltaCapability.toFixed(1)}%
                     </h3>
                   </div>
                 </GlassCard>
                 <GlassCard className="text-center">
-                  <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Impacted Projects</p>
-                  <h3 className="text-3xl font-black text-amber-400">{result.impactedProjects.length}</h3>
+                  <p className="text-sm text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Impacted Projects</p>
+                  <h3 className="text-3xl font-bold text-amber-400">{result.impactedProjects.length}</h3>
                 </GlassCard>
                 <GlassCard className="text-center">
-                  <p className="text-sm text-slate-400 uppercase tracking-wider mb-1">Missing Skills</p>
-                  <h3 className="text-3xl font-black text-red-400">{result.missingSkills.length}</h3>
+                  <p className="text-sm text-[var(--text-tertiary)] uppercase tracking-wider mb-1">Missing Skills</p>
+                  <h3 className="text-3xl font-bold text-red-400">{result.missingSkills.length}</h3>
                 </GlassCard>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="font-bold text-slate-200 mb-3 flex items-center gap-2">
+                  <h3 className="font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-blue-400" />
                     Impact Analysis
                   </h3>
-                  <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+                  <div className="bg-[var(--bg-surface-alt)]/50 rounded-xl p-4 border border-[var(--border-strong)]">
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-sm">Capability Index</span>
+                        <span className="text-[var(--text-tertiary)] text-sm">Capability Index</span>
                         <div className="flex items-center gap-2 text-sm font-bold">
-                          <span className="text-slate-300">{result.beforeStats.capabilityScore}</span>
-                          <ArrowRight className="w-3 h-3 text-slate-500" />
+                          <span className="text-[var(--text-secondary)]">{result.beforeStats.capabilityScore}</span>
+                          <ArrowRight className="w-3 h-3 text-[var(--text-tertiary)]" />
                           <span className={result.afterStats.capabilityScore < result.beforeStats.capabilityScore ? 'text-red-400' : 'text-emerald-400'}>
                             {result.afterStats.capabilityScore}
                           </span>
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-slate-400 text-sm">Headcount</span>
+                        <span className="text-[var(--text-tertiary)] text-sm">Headcount</span>
                         <div className="flex items-center gap-2 text-sm font-bold">
-                          <span className="text-slate-300">{result.beforeStats.headcount}</span>
-                          <ArrowRight className="w-3 h-3 text-slate-500" />
-                          <span className={result.afterStats.headcount < result.beforeStats.headcount ? 'text-red-400' : 'text-slate-300'}>
+                          <span className="text-[var(--text-secondary)]">{result.beforeStats.headcount}</span>
+                          <ArrowRight className="w-3 h-3 text-[var(--text-tertiary)]" />
+                          <span className={result.afterStats.headcount < result.beforeStats.headcount ? 'text-red-400' : 'text-[var(--text-secondary)]'}>
                             {result.afterStats.headcount}
                           </span>
                         </div>
@@ -203,11 +203,11 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
                     </div>
 
                     {result.missingSkills.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-slate-700">
+                      <div className="mt-4 pt-4 border-t border-[var(--border-strong)]">
                         <h4 className="text-xs font-bold text-red-400 uppercase mb-2">Capability Lost</h4>
                         <div className="flex flex-wrap gap-2">
                           {result.missingSkills.map((s, i) => (
-                            <span key={i} className="px-2 py-1 bg-red-500/10 text-red-400 text-[10px] rounded-md font-bold">
+                            <span key={i} className="px-2 py-1 bg-red-500/10 text-red-400 text-[12px] rounded-md font-bold">
                               {s}
                             </span>
                           ))}
@@ -216,9 +216,9 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
                     )}
                     
                     {result.financialImpact && (
-                      <div className="mt-4 pt-4 border-t border-slate-700">
+                      <div className="mt-4 pt-4 border-t border-[var(--border-strong)]">
                         <h4 className="text-xs font-bold text-emerald-400 uppercase mb-2 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Financial Impact</h4>
-                        <p className="text-xs text-slate-300 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg leading-relaxed">
+                        <p className="text-xs text-[var(--text-secondary)] bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-lg leading-relaxed">
                           {result.financialImpact}
                         </p>
                       </div>
@@ -227,13 +227,13 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-slate-200 mb-3 flex items-center gap-2">
+                  <h3 className="font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                     <Users className="w-4 h-4 text-emerald-400" />
                     AI Recommended Successors
                   </h3>
                   {result.recommendedSuccessors.length === 0 ? (
-                    <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700 text-center">
-                      <p className="text-slate-400 text-sm">No internal successors found with matching skill profile.</p>
+                    <div className="bg-[var(--bg-surface-alt)]/50 rounded-xl p-4 border border-[var(--border-strong)] text-center">
+                      <p className="text-[var(--text-tertiary)] text-sm">No internal successors found with matching skill profile.</p>
                       <button className="mt-3 px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-sm text-white transition-colors">
                         Open Requisition
                       </button>
@@ -241,19 +241,19 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
                   ) : (
                     <div className="space-y-3">
                       {result.recommendedSuccessors.map((s, i) => (
-                        <div key={i} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700 flex items-center justify-between group hover:border-slate-500 transition-colors">
+                        <div key={i} className="bg-[var(--bg-surface-alt)]/50 rounded-xl p-3 border border-[var(--border-strong)] flex items-center justify-between group hover:border-slate-500 transition-colors">
                           <div className="flex items-center gap-3">
                              <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
                                 {s.employee.name.charAt(0)}
                              </div>
                              <div>
-                               <p className="text-sm font-bold text-slate-200">{s.employee.name}</p>
-                               <p className="text-xs text-slate-500">{s.employee.role}</p>
+                               <p className="text-sm font-bold text-[var(--text-primary)]">{s.employee.name}</p>
+                               <p className="text-xs text-[var(--text-tertiary)]">{s.employee.role}</p>
                              </div>
                           </div>
                           <div className="text-right">
                             <p className="text-xs font-bold text-emerald-400">{s.matchScore.toFixed(0)}% Match</p>
-                            <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${
+                            <span className={`text-[12px] uppercase font-bold px-1.5 py-0.5 rounded ${
                               s.readiness === 'Ready Now' ? 'bg-emerald-500/20 text-emerald-300' :
                               s.readiness === 'Ready 1-2 Yrs' ? 'bg-amber-500/20 text-amber-300' :
                               'bg-red-500/20 text-red-300'
@@ -271,7 +271,7 @@ export const SuccessionSimulator: React.FC<SuccessionSimulatorProps> = ({ employ
               <div className="flex justify-end pt-4">
                 <button
                    onClick={() => setResult(null)}
-                   className="px-4 py-2 text-slate-400 hover:text-white text-sm mr-3"
+                   className="px-4 py-2 text-[var(--text-tertiary)] hover:text-white text-sm mr-3"
                 >
                    Run Another Scenario
                 </button>

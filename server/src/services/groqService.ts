@@ -17,10 +17,11 @@ export type GroqModelId = typeof GROQ_MODELS[number]['id'];
 export interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
+  image?: string; // base64
 }
 
 // Build a rich system prompt with live workforce data
-async function buildSystemPrompt(): Promise<string> {
+async function buildSystemPrompt(isVision: boolean = false): Promise<string> {
   try {
     const [employees, projects] = await Promise.all([
       db.getEmployees(),
@@ -34,11 +35,11 @@ async function buildSystemPrompt(): Promise<string> {
       ? (employees.reduce((s, e) => s + e.performanceRating, 0) / employees.length).toFixed(2)
       : 'N/A';
 
-    const empSummary = employees.slice(0, 20).map(e =>
-      `  • ${e.name} | ${e.role} | ${e.department} | ${e.experienceYears}yrs | Rating: ${e.performanceRating} | Skills: ${e.technicalSkills.slice(0, 5).map(s => s.name).join(', ')}${e.technicalSkills.length > 5 ? '...' : ''} | Projects: ${e.currentProjects.join(', ') || 'None'}`
+    const empSummary = employees.slice(0, isVision ? 8 : 30).map(e =>
+      `  • ${e.name} (${e.id}) | ${e.role} | ${e.department} | ${e.experienceYears}yrs | Rating: ${e.performanceRating} | Skills: ${e.technicalSkills.slice(0, 5).map(s => s.name).join(', ')}${e.technicalSkills.length > 5 ? '...' : ''} | Projects: ${e.currentProjects.join(', ') || 'None'}`
     ).join('\n');
 
-    const projSummary = projects.slice(0, 15).map(p =>
+    const projSummary = projects.slice(0, isVision ? 5 : 20).map(p =>
       `  • ${p.name} (${p.id}) | Status: ${p.status || 'Active'} | Priority: ${p.priority || 'Medium'} | Budget: $${(p.budget || 0).toLocaleString()} | Health: ${(p as any).healthScore ? `${(p as any).healthScore}% (${(p as any).healthLevel})` : 'N/A'} | Manager: ${(p as any).projectManager || 'Unassigned'} | Required Skills: ${p.requiredSkills.slice(0, 5).join(', ')}`
     ).join('\n');
 
@@ -82,13 +83,23 @@ ${projSummary}${projects.length > 15 ? `\n  ... and ${projects.length - 15} more
 - High Priority Projects: ${projects.filter(p => p.priority === 'High').length}
 
 ## ACTION COMMANDS
-When users want to perform an action, respond with the action in a structured block at the END of your message:
+When users want to perform an action, respond with the action in a structured block at the END of your message. 
+
+For navigation (e.g. user says "go to dashboard" or "show me projects"):
 \`\`\`action
 {"type": "navigate", "target": "employees|projects|staffing|gap-analysis|skill-graph|dashboard", "reason": "..."}
 \`\`\`
-or
+
+For creating a project (e.g. user says "create a new project"):
+IMPORTANT: If the user hasn't provided details like budget, required skills, team size, or duration, you MUST ask follow-up questions first. Do NOT output the create_project block until you have gathered these requirements.
+Once you have the details, output:
 \`\`\`action
-{"type": "highlight", "entityType": "employee|project", "entityId": "...", "reason": "..."}
+{"type": "create_project", "projectDetails": {"name": "...", "description": "...", "requiredSkills": ["..."], "budget": 100000, "teamSize": 3, "durationMonths": 6, "priority": "High"}}
+\`\`\`
+
+For assigning team members to a project (e.g. user says "assign this person" or "add them to team"):
+\`\`\`action
+{"type": "assign_team", "projectId": "...", "members": [{"employeeId": "...", "role": "...", "allocation": 100}]}
 \`\`\`
 
 Always be helpful, specific, data-driven, and strategic. You are the most intelligent workforce advisor in the organization.`;
@@ -173,11 +184,32 @@ export async function chatCompletion(
   temperature = 0.7,
   maxTokens = 2048,
 ): Promise<string> {
-  const systemPrompt = await buildSystemPrompt();
+  const hasImages = messages.some(m => m.image);
+  const systemPrompt = await buildSystemPrompt(hasImages);
   const fullMessages: ChatMessage[] = [
     { role: 'system', content: systemPrompt },
     ...messages,
   ];
+
+  // Auto-switch to vision model if any images are present
+  const actualModel = hasImages ? 'qwen/qwen3.6-27b' : model;
+
+  // Format messages for Groq SDK
+  const formattedMessages = fullMessages.map(msg => {
+    if (msg.image) {
+      return {
+        role: msg.role,
+        content: [
+          { type: 'text', text: msg.content },
+          { type: 'image_url', image_url: { url: msg.image } }
+        ]
+      };
+    }
+    return {
+      role: msg.role,
+      content: msg.content
+    };
+  });
 
   let attempt = 0;
   const maxAttempts = 3;
@@ -186,8 +218,8 @@ export async function chatCompletion(
     attempt++;
     try {
       const completion = await groq.chat.completions.create({
-        model,
-        messages: fullMessages,
+        model: actualModel,
+        messages: formattedMessages as any, // Cast as any because Groq SDK types might not be fully updated for vision content arrays
         temperature,
         max_tokens: maxTokens,
       });
